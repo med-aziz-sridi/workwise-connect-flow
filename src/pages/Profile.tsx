@@ -8,18 +8,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, Save, Upload, User } from 'lucide-react';
+import { Plus, X, Save, Upload, User, ArrowLeft } from 'lucide-react';
 import ProjectCard from '@/components/freelancers/ProjectCard';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
 import { useToast } from '@/components/ui/use-toast';
 import { Project } from '@/types';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
   const { projects, deleteProject } = useData();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState(user?.bio || '');
@@ -81,13 +83,27 @@ const Profile = () => {
       description: "Your project has been removed from your portfolio",
     });
   };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
   
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Back button */}
+      <Button 
+        variant="ghost" 
+        className="mb-6 flex items-center"
+        onClick={handleBack}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
+
       <div className="relative w-full">
         {/* Cover image */}
         <div 
-          className="w-full h-72 bg-gray-200 rounded-xl overflow-hidden relative"
+          className="w-full h-80 bg-gray-200 rounded-xl overflow-hidden relative shadow-md"
           style={{
             backgroundImage: coverPicture ? `url(${coverPicture})` : undefined,
             backgroundSize: 'cover',

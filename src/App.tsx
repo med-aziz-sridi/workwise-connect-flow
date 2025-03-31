@@ -25,6 +25,7 @@ import ApplicantProfile from "./pages/provider/ApplicantProfile";
 import Settings from "./pages/Settings";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Notifications from "./pages/Notifications";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import RoleRoute from "./components/auth/RoleRoute";
 
@@ -145,6 +146,14 @@ const App = () => (
                   element={
                     <PrivateRoute>
                       <Settings />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/notifications" 
+                  element={
+                    <PrivateRoute>
+                      <Notifications />
                     </PrivateRoute>
                   } 
                 />

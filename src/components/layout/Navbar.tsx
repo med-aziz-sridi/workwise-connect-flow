@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell, Menu, X, User, Briefcase, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bell, Menu, X, User, Briefcase, LogOut, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,6 +20,7 @@ const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { notifications } = useData();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const unreadNotifications = notifications.filter(
     n => n.userId === user?.id && !n.read
@@ -97,9 +98,23 @@ const Navbar: React.FC = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to={user.role === 'freelancer' ? '/projects' : '/my-jobs'} className="cursor-pointer w-full flex items-center">
+                      <Link 
+                        to={user.role === 'freelancer' ? '/applications' : '/my-jobs'} 
+                        className="cursor-pointer w-full flex items-center"
+                      >
                         <Briefcase className="mr-2 h-4 w-4" />
-                        <span>{user.role === 'freelancer' ? 'My Projects' : 'My Jobs'}</span>
+                        <span>{user.role === 'freelancer' ? 'My Applications' : 'My Jobs'}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/notifications" className="cursor-pointer w-full flex items-center">
+                        <Bell className="mr-2 h-4 w-4" />
+                        <span>Notifications</span>
+                        {unreadNotifications > 0 && (
+                          <span className="ml-2 h-5 w-5 text-xs bg-red-500 text-white rounded-full flex items-center justify-center">
+                            {unreadNotifications}
+                          </span>
+                        )}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -172,13 +187,8 @@ const Navbar: React.FC = () => {
                           <>
                             <Button variant="ghost" asChild onClick={closeMenu}>
                               <Link to="/applications" className="justify-start">
-                                My Applications
-                              </Link>
-                            </Button>
-                            <Button variant="ghost" asChild onClick={closeMenu}>
-                              <Link to="/projects" className="justify-start">
                                 <Briefcase className="mr-2 h-5 w-5" />
-                                My Projects
+                                My Applications
                               </Link>
                             </Button>
                           </>
