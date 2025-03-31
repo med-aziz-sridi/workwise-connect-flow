@@ -13,29 +13,6 @@ export interface User {
   createdAt: string;
 }
 
-export interface FreelancerProfile extends User {
-  role: 'freelancer';
-  skills: string[];
-  bio: string;
-  projects: Project[];
-}
-
-export interface ProviderProfile extends User {
-  role: 'provider';
-  company?: string;
-  website?: string;
-  location?: string;
-}
-
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  images: string[];
-  freelancerId: string;
-  createdAt: string;
-}
-
 export interface Job {
   id: string;
   title: string;
@@ -45,7 +22,8 @@ export interface Job {
   providerId: string;
   providerName: string;
   createdAt: string;
-  status: 'open' | 'closed';
+  status: 'open' | 'closed' | 'completed';
+  coverImage?: string;
 }
 
 export interface Application {
@@ -57,12 +35,30 @@ export interface Application {
   createdAt: string;
 }
 
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  images: string[];
+  freelancerId: string;
+  createdAt: string;
+}
+
 export interface Notification {
   id: string;
   userId: string;
   message: string;
   read: boolean;
   createdAt: string;
-  type: 'job' | 'application' | 'message';
-  relatedId?: string;
+  type: 'application' | 'job' | 'message';
+  relatedId: string;
+}
+
+// Update DataContext with coverImage
+export interface CreateJobInput {
+  title: string;
+  description: string;
+  skills: string[];
+  budget: number;
+  coverImage?: string;
 }

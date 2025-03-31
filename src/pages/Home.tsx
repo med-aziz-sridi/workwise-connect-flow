@@ -1,17 +1,29 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { Check, Search, Briefcase, Users } from 'lucide-react';
 
 const Home: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      // Redirect based on user role
+      navigate(user.role === 'freelancer' ? '/freelancer/dashboard' : '/provider/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (user) {
+    return null; // Render nothing while redirecting
+  }
 
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="gradient-bg text-white">
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
@@ -21,28 +33,12 @@ const Home: React.FC = () => {
               Connect with talented professionals and get your projects done quickly and efficiently.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              {user ? (
-                <>
-                  {user.role === 'freelancer' ? (
-                    <Button size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100">
-                      <Link to="/jobs">Find Jobs</Link>
-                    </Button>
-                  ) : (
-                    <Button size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100">
-                      <Link to="/post-job">Post a Job</Link>
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Button size="lg" asChild>
-                    <Link to="/register">Join as a Freelancer</Link>
-                  </Button>
-                  <Button size="lg" asChild variant="outline" className="bg-transparent border-white text-white hover:bg-white/10">
-                    <Link to="/register">Hire a Freelancer</Link>
-                  </Button>
-                </>
-              )}
+              <Button size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100">
+                <Link to="/register">Join as a Freelancer</Link>
+              </Button>
+              <Button size="lg" asChild variant="outline" className="bg-transparent border-white text-white hover:bg-white/10">
+                <Link to="/register">Hire a Freelancer</Link>
+              </Button>
             </div>
           </div>
         </div>

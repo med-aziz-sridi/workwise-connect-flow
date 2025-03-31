@@ -1,89 +1,61 @@
 
 import React from 'react';
 import { Project } from '@/types';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Trash, Edit } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
-import { useData } from '@/context/DataContext';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Trash } from 'lucide-react';
 
-interface ProjectCardProps {
+export interface ProjectCardProps {
   project: Project;
-  onEdit?: (project: Project) => void;
+  onDelete?: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
-  const { user } = useAuth();
-  const { deleteProject } = useData();
-  
-  const canManage = user?.id === project.freelancerId;
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
+  const { title, description, images } = project;
   
   return (
-    <Card>
-      <div className="relative aspect-video overflow-hidden">
-        {project.images.length > 0 ? (
-          <img 
-            src={project.images[0]} 
-            alt={project.title} 
-            className="object-cover w-full h-full"
-          />
-        ) : (
-          <div className="bg-gray-200 w-full h-full flex items-center justify-center text-gray-500">
-            No Image
-          </div>
+    <Card className="overflow-hidden group h-full relative">
+      <div className="relative">
+        <div className="h-48 bg-gray-200 overflow-hidden">
+          {images.length > 0 ? (
+            <img
+              src={images[0]}
+              alt={title}
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+              No Image
+            </div>
+          )}
+        </div>
+        
+        {onDelete && (
+          <Button
+            variant="destructive"
+            size="icon"
+            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={onDelete}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
         )}
       </div>
       
       <CardContent className="p-4">
-        <h3 className="text-lg font-semibold">{project.title}</h3>
-        <p className="text-gray-700 mt-1 line-clamp-3">{project.description}</p>
+        <h3 className="font-semibold text-lg mb-2">{title}</h3>
+        <p className="text-gray-600 text-sm line-clamp-3">{description}</p>
+        
+        {images.length > 1 && (
+          <div className="flex mt-3 gap-2 overflow-x-auto">
+            {images.slice(1).map((image, index) => (
+              <div key={index} className="w-16 h-16 flex-shrink-0 rounded overflow-hidden border">
+                <img src={image} alt={`${title} ${index + 2}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
-      
-      {canManage && (
-        <CardFooter className="p-4 bg-gray-50 border-t flex justify-between">
-          {onEdit && (
-            <Button variant="outline" size="sm" onClick={() => onEdit(project)}>
-              <Edit className="h-4 w-4 mr-1" /> Edit
-            </Button>
-          )}
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50">
-                <Trash className="h-4 w-4 mr-1" /> Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Project</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this project? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={() => deleteProject(project.id)}
-                  className="bg-red-500 hover:bg-red-600"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardFooter>
-      )}
     </Card>
   );
 };

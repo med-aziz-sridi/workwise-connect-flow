@@ -13,6 +13,7 @@ import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 const AVAILABLE_SKILLS = [
   'React', 'Node.js', 'TypeScript', 'MongoDB', 'UI/UX', 'Figma', 'Adobe XD', 
@@ -35,6 +36,9 @@ const jobSchema = z.object({
   skills: z
     .array(z.string())
     .min(1, { message: 'Select at least one skill' }),
+  coverImage: z
+    .string()
+    .optional(),
 });
 
 type JobFormValues = z.infer<typeof jobSchema>;
@@ -51,6 +55,7 @@ const PostJob: React.FC = () => {
       description: '',
       budget: '',
       skills: [],
+      coverImage: '',
     },
   });
   
@@ -69,6 +74,7 @@ const PostJob: React.FC = () => {
       description: data.description,
       skills: data.skills,
       budget: data.budget,
+      coverImage: data.coverImage,
     });
     
     navigate('/my-jobs');
@@ -85,7 +91,7 @@ const PostJob: React.FC = () => {
   
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Card>
+      <Card className="shadow-lg border-t-4 border-t-blue-500">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Post a New Job</CardTitle>
           <CardDescription>
@@ -96,6 +102,24 @@ const PostJob: React.FC = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="coverImage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cover Image (Optional)</FormLabel>
+                    <FormControl>
+                      <ImageUpload 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        className="h-48 w-full" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <FormField
                 control={form.control}
                 name="title"
@@ -176,7 +200,7 @@ const PostJob: React.FC = () => {
             </CardContent>
             
             <CardFooter>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
                 Post Job
               </Button>
             </CardFooter>

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { DataProvider } from "./context/DataContext";
 import Layout from "./components/layout/Layout";
@@ -25,6 +25,8 @@ import ApplicantProfile from "./pages/provider/ApplicantProfile";
 import Settings from "./pages/Settings";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import PrivateRoute from "./components/auth/PrivateRoute";
+import RoleRoute from "./components/auth/RoleRoute";
 
 const queryClient = new QueryClient();
 
@@ -38,27 +40,114 @@ const App = () => (
           <BrowserRouter>
             <Layout>
               <Routes>
-                <Route path="/" element={<Home />} />
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/jobs/:id" element={<JobDetail />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<Settings />} />
-
+                
+                {/* Redirect based on role */}
+                <Route path="/" element={<Home />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <PrivateRoute>
+                      {(user) => 
+                        user.role === 'freelancer' 
+                          ? <Navigate to="/freelancer/dashboard" replace /> 
+                          : <Navigate to="/provider/dashboard" replace />
+                      }
+                    </PrivateRoute>
+                  } 
+                />
+                
                 {/* Freelancer routes */}
-                <Route path="/dashboard" element={<FreelancerDashboard />} />
-                <Route path="/applications" element={<Applications />} />
-                <Route path="/add-project" element={<AddProject />} />
-
+                <Route 
+                  path="/freelancer/dashboard" 
+                  element={
+                    <RoleRoute role="freelancer">
+                      <FreelancerDashboard />
+                    </RoleRoute>
+                  } 
+                />
+                <Route 
+                  path="/applications" 
+                  element={
+                    <RoleRoute role="freelancer">
+                      <Applications />
+                    </RoleRoute>
+                  } 
+                />
+                <Route 
+                  path="/add-project" 
+                  element={
+                    <RoleRoute role="freelancer">
+                      <AddProject />
+                    </RoleRoute>
+                  } 
+                />
+                
                 {/* Provider routes */}
-                <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-                <Route path="/post-job" element={<PostJob />} />
-                <Route path="/my-jobs" element={<MyJobs />} />
-                <Route path="/jobs/:id/applicants" element={<JobApplicants />} />
-                <Route path="/applicants/:id" element={<ApplicantProfile />} />
+                <Route 
+                  path="/provider/dashboard" 
+                  element={
+                    <RoleRoute role="provider">
+                      <ProviderDashboard />
+                    </RoleRoute>
+                  } 
+                />
+                <Route 
+                  path="/post-job" 
+                  element={
+                    <RoleRoute role="provider">
+                      <PostJob />
+                    </RoleRoute>
+                  } 
+                />
+                <Route 
+                  path="/my-jobs" 
+                  element={
+                    <RoleRoute role="provider">
+                      <MyJobs />
+                    </RoleRoute>
+                  } 
+                />
+                <Route 
+                  path="/jobs/:id/applicants" 
+                  element={
+                    <RoleRoute role="provider">
+                      <JobApplicants />
+                    </RoleRoute>
+                  } 
+                />
+                <Route 
+                  path="/applicants/:id" 
+                  element={
+                    <RoleRoute role="provider">
+                      <ApplicantProfile />
+                    </RoleRoute>
+                  } 
+                />
+                
+                {/* Common authenticated routes */}
+                <Route 
+                  path="/profile" 
+                  element={
+                    <PrivateRoute>
+                      <Profile />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/settings" 
+                  element={
+                    <PrivateRoute>
+                      <Settings />
+                    </PrivateRoute>
+                  } 
+                />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>

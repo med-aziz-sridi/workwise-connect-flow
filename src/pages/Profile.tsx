@@ -1,409 +1,305 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Plus, X, Save, Upload, User } from 'lucide-react';
+import ProjectCard from '@/components/freelancers/ProjectCard';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
-import { Plus, Upload, X, Pencil } from 'lucide-react';
-import ProjectCard from '@/components/freelancers/ProjectCard';
+import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
+import { useToast } from '@/components/ui/use-toast';
+import { Project } from '@/types';
 
-const AVAILABLE_SKILLS = [
-  'React', 'Node.js', 'TypeScript', 'MongoDB', 'UI/UX', 'Figma', 'Adobe XD', 
-  'Sketch', 'WordPress', 'PHP', 'CSS', 'JavaScript', 'Mobile Design', 'iOS', 'Android',
-  'Payment API'
-];
-
-const profileSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Invalid email address' }),
-  bio: z.string().optional(),
-  company: z.string().optional(),
-  website: z.string().url({ message: 'Must be a valid URL' }).optional().or(z.literal('')),
-  location: z.string().optional(),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
-
-const Profile: React.FC = () => {
+const Profile = () => {
   const { user, updateUser } = useAuth();
   const { projects, deleteProject } = useData();
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(user?.skills || []);
+  const { toast } = useToast();
   
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: user?.name || '',
-      email: user?.email || '',
-      bio: user?.bio || '',
-      company: user?.role === 'provider' ? (user as any).company || '' : '',
-      website: user?.role === 'provider' ? (user as any).website || '' : '',
-      location: user?.role === 'provider' ? (user as any).location || '' : '',
-    },
-  });
-  
-  const toggleSkill = (skill: string) => {
-    if (selectedSkills.includes(skill)) {
-      setSelectedSkills(selectedSkills.filter(s => s !== skill));
-    } else {
-      setSelectedSkills([...selectedSkills, skill]);
-    }
-  };
-  
-  const onSubmit = (data: ProfileFormValues) => {
-    const updateData: any = {
-      ...data,
-      skills: selectedSkills,
-    };
-    
-    // Remove fields that are not relevant to the user role
-    if (user?.role === 'freelancer') {
-      delete updateData.company;
-      delete updateData.website;
-      delete updateData.location;
-    }
-    
-    updateUser(updateData);
-  };
-  
-  const userProjects = projects.filter(p => p.freelancerId === user?.id);
+  const [name, setName] = useState(user?.name || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [profilePicture, setProfilePicture] = useState(user?.profilePicture || '');
+  const [coverPicture, setCoverPicture] = useState(user?.coverPicture || '');
+  const [skillInput, setSkillInput] = useState('');
+  const [skills, setSkills] = useState<string[]>(user?.skills || []);
+  const [isEditing, setIsEditing] = useState(false);
   
   if (!user) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">You need to be logged in to view your profile</h1>
-        <Button asChild>
-          <Link to="/login">Log In</Link>
-        </Button>
-      </div>
-    );
+    return <AuthRequiredPage message="Please log in to view your profile" />;
   }
   
+  const userProjects = projects.filter(project => project.freelancerId === user.id);
+  
+  const addSkill = () => {
+    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
+      setSkills([...skills, skillInput.trim()]);
+      setSkillInput('');
+    }
+  };
+  
+  const removeSkill = (skill: string) => {
+    setSkills(skills.filter(s => s !== skill));
+  };
+  
+  const handleProfilePictureChange = () => {
+    const url = prompt('Enter image URL for profile picture:');
+    if (url) setProfilePicture(url);
+  };
+  
+  const handleCoverPictureChange = () => {
+    const url = prompt('Enter image URL for cover picture:');
+    if (url) setCoverPicture(url);
+  };
+  
+  const handleSaveProfile = () => {
+    updateUser({
+      name,
+      bio,
+      profilePicture,
+      coverPicture,
+      skills,
+    });
+    
+    setIsEditing(false);
+    
+    toast({
+      title: "Profile updated",
+      description: "Your profile has been updated successfully",
+    });
+  };
+  
+  const handleDeleteProject = (projectId: string) => {
+    deleteProject(projectId);
+    
+    toast({
+      title: "Project deleted",
+      description: "Your project has been removed from your portfolio",
+    });
+  };
+  
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-2">Manage your personal information and portfolio</p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative w-full">
+        {/* Cover image */}
+        <div 
+          className="w-full h-64 bg-gray-200 rounded-xl overflow-hidden relative"
+          style={{
+            backgroundImage: coverPicture ? `url(${coverPicture})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {isEditing && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute bottom-4 right-4 bg-gray-800 text-white hover:bg-gray-700"
+              onClick={handleCoverPictureChange}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Change Cover
+            </Button>
+          )}
+        </div>
+        
+        {/* Profile picture and name */}
+        <div className="absolute -bottom-16 left-8 flex items-end space-x-4">
+          <div className="relative">
+            <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+              <AvatarImage src={profilePicture} alt={user.name} />
+              <AvatarFallback className="text-4xl bg-blue-500 text-white">
+                {user.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {isEditing && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="absolute bottom-0 right-0 bg-gray-800 text-white hover:bg-gray-700 rounded-full h-8 w-8 p-0"
+                onClick={handleProfilePictureChange}
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          
+          {!isEditing && (
+            <div className="mb-2">
+              <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
+              <p className="text-gray-500">{user.role === 'freelancer' ? 'Freelancer' : 'Job Provider'}</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Edit profile button */}
+        <div className="absolute -bottom-16 right-8">
+          {isEditing ? (
+            <Button 
+              onClick={handleSaveProfile} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Profile
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditing(true)}
+            >
+              Edit Profile
+            </Button>
+          )}
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Update your profile details and public information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" {...field} disabled />
-                          </FormControl>
-                          <FormDescription>
-                            Your email address is used for login and cannot be changed
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {user.role === 'freelancer' && (
-                      <>
-                        <FormField
-                          control={form.control}
-                          name="bio"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Bio</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Tell potential clients about your experience, skills, and what you love to work on..."
-                                  className="min-h-[120px]"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div>
-                          <FormLabel>Skills</FormLabel>
-                          <div className="flex flex-wrap gap-2 mt-2 border rounded-md p-3">
-                            {AVAILABLE_SKILLS.map((skill) => {
-                              const isSelected = selectedSkills.includes(skill);
-                              return (
-                                <Badge
-                                  key={skill}
-                                  variant={isSelected ? "default" : "outline"}
-                                  className={`cursor-pointer ${
-                                    isSelected ? "bg-blue-500 hover:bg-blue-600" : "hover:bg-blue-50"
-                                  }`}
-                                  onClick={() => toggleSkill(skill)}
-                                >
-                                  {skill}
-                                </Badge>
-                              );
-                            })}
-                          </div>
-                          {selectedSkills.length === 0 && (
-                            <p className="text-sm text-red-500 mt-1">
-                              Select at least one skill to help clients find you
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                    
-                    {user.role === 'provider' && (
-                      <>
-                        <FormField
-                          control={form.control}
-                          name="company"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Company Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Your company or organization" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="website"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Website</FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://yourcompany.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="location"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Location</FormLabel>
-                              <FormControl>
-                                <Input placeholder="City, Country" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="bio"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>About Company</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Share information about your company and the types of projects you're looking for..."
-                                  className="min-h-[120px]"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </>
-                    )}
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button type="submit">Save Changes</Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+      <div className="mt-20">
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            {user.role === 'freelancer' && (
+              <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            )}
+          </TabsList>
           
-          {user.role === 'freelancer' && (
-            <Card className="mt-6">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Portfolio Projects</CardTitle>
-                  <CardDescription>
-                    Showcase your work to potential clients
-                  </CardDescription>
-                </div>
-                <Button asChild>
-                  <Link to="/add-project">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Project
-                  </Link>
-                </Button>
+          <TabsContent value="profile" className="mt-6">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle>Profile Information</CardTitle>
               </CardHeader>
               <CardContent>
-                {userProjects.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {userProjects.map(project => (
-                      <ProjectCard 
-                        key={project.id} 
-                        project={project} 
-                        onDelete={() => deleteProject(project.id)}
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Name</Label>
+                      <Input 
+                        id="name" 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
+                        placeholder="Your name"
                       />
-                    ))}
+                    </div>
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea 
+                        id="bio" 
+                        value={bio} 
+                        onChange={(e) => setBio(e.target.value)} 
+                        placeholder="Tell us about yourself"
+                        className="min-h-[120px]"
+                      />
+                    </div>
+                    
+                    {user.role === 'freelancer' && (
+                      <div className="grid gap-2">
+                        <Label htmlFor="skills">Skills</Label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {skills.map((skill) => (
+                            <Badge key={skill} className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200">
+                              {skill}
+                              <button onClick={() => removeSkill(skill)} className="ml-1 text-blue-700 hover:text-blue-900">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input 
+                            id="skills" 
+                            value={skillInput} 
+                            onChange={(e) => setSkillInput(e.target.value)} 
+                            placeholder="Add a skill"
+                            onKeyDown={(e) => e.key === 'Enter' && addSkill()}
+                          />
+                          <Button type="button" size="sm" onClick={addSkill}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="text-center py-8 border border-dashed rounded-lg">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
-                    <p className="text-gray-600 mb-4">
-                      Add your best work to showcase your skills to potential clients
-                    </p>
-                    <Button asChild>
-                      <Link to="/add-project">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Your First Project
-                      </Link>
-                    </Button>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">About</h3>
+                      <p className="mt-1 text-gray-900">{bio || 'No bio provided'}</p>
+                    </div>
+                    
+                    {user.role === 'freelancer' && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Skills</h3>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {skills.length > 0 ? (
+                            skills.map((skill) => (
+                              <Badge key={skill} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                                {skill}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-gray-500">No skills added yet</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Member since</h3>
+                      <p className="mt-1 text-gray-900">{new Date(user.createdAt).toLocaleDateString()}</p>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-          )}
-        </div>
-        
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Preview</CardTitle>
-              <CardDescription>
-                How others see your profile
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative rounded-lg overflow-hidden h-32 bg-blue-100 mb-6">
-                {user.coverPicture ? (
-                  <img 
-                    src={user.coverPicture} 
-                    alt="Cover" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Button variant="ghost" className="text-blue-500">
-                      <Upload className="h-5 w-5 mr-2" />
-                      Upload Cover Image
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col items-center -mt-12 relative z-10">
-                <div className="relative h-24 w-24 rounded-full border-4 border-white bg-white">
-                  {user.profilePicture ? (
-                    <img 
-                      src={user.profilePicture} 
-                      alt={user.name} 
-                      className="h-full w-full rounded-full object-cover"
-                    />
+          </TabsContent>
+          
+          {user.role === 'freelancer' && (
+            <TabsContent value="portfolio" className="mt-6">
+              <Card className="shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Portfolio Projects</CardTitle>
+                  <Button asChild>
+                    <a href="/add-project">
+                      <Plus className="h-4 w-4 mr-2" /> Add Project
+                    </a>
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {userProjects.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {userProjects.map((project) => (
+                        <ProjectCard 
+                          key={project.id} 
+                          project={project} 
+                          onDelete={() => handleDeleteProject(project.id)} 
+                        />
+                      ))}
+                    </div>
                   ) : (
-                    <div className="h-full w-full rounded-full bg-blue-100 flex items-center justify-center">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-full w-full rounded-full p-0"
-                      >
-                        <Upload className="h-6 w-6 text-blue-500" />
-                      </Button>
+                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                      <User className="h-12 w-12 mx-auto text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Get started by adding your first portfolio project.
+                      </p>
+                      <div className="mt-6">
+                        <Button asChild>
+                          <a href="/add-project">
+                            <Plus className="h-4 w-4 mr-2" /> Add Project
+                          </a>
+                        </Button>
+                      </div>
                     </div>
                   )}
-                </div>
-                
-                <h3 className="font-bold text-xl mt-3">{form.watch('name') || user.name}</h3>
-                <p className="text-gray-500 text-sm">{user.role === 'freelancer' ? 'Freelancer' : 'Job Provider'}</p>
-                
-                {user.role === 'freelancer' && (
-                  <div className="flex flex-wrap gap-1 mt-3 justify-center">
-                    {selectedSkills.slice(0, 5).map(skill => (
-                      <Badge key={skill} variant="secondary" className="bg-blue-50 text-blue-700">
-                        {skill}
-                      </Badge>
-                    ))}
-                    {selectedSkills.length > 5 && (
-                      <Badge variant="secondary" className="bg-gray-50 text-gray-700">
-                        +{selectedSkills.length - 5} more
-                      </Badge>
-                    )}
-                  </div>
-                )}
-                
-                {user.role === 'provider' && form.watch('company') && (
-                  <p className="text-gray-700 mt-1">{form.watch('company')}</p>
-                )}
-              </div>
-              
-              <Separator className="my-4" />
-              
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">Bio</h4>
-                <p className="text-sm text-gray-600">
-                  {form.watch('bio') || 'No bio provided yet'}
-                </p>
-              </div>
-              
-              {user.role === 'provider' && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Contact</h4>
-                  <div className="text-sm">
-                    {form.watch('website') && (
-                      <p className="text-blue-600 hover:underline">
-                        {form.watch('website')}
-                      </p>
-                    )}
-                    {form.watch('location') && (
-                      <p className="text-gray-600 mt-1">
-                        {form.watch('location')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </div>
   );

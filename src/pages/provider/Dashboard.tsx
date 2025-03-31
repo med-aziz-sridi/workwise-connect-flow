@@ -1,249 +1,274 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { useData } from '@/context/DataContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BriefcaseBusiness, Bell, User, Plus, Users } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useData } from '@/context/DataContext';
 import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { formatDistanceToNow } from 'date-fns';
+import { Plus, Users, Briefcase, Clock, DollarSign } from 'lucide-react';
 
-const ProviderDashboard: React.FC = () => {
+const ProviderDashboard = () => {
   const { user } = useAuth();
-  const { jobs, applications, notifications } = useData();
+  const { jobs, applications } = useData();
   
   if (!user || user.role !== 'provider') {
     return (
       <AuthRequiredPage 
         role="provider" 
-        message="Only job providers can access this dashboard" 
+        message="Only job providers can access the provider dashboard" 
       />
     );
   }
   
-  const providerJobs = jobs.filter(job => job.providerId === user.id);
-  const openJobs = providerJobs.filter(job => job.status === 'open');
-  const totalApplications = applications.filter(app => 
-    providerJobs.some(job => job.id === app.jobId)
+  // Get jobs posted by this provider
+  const myJobs = jobs.filter(job => job.providerId === user.id);
+  
+  // Get applications for this provider's jobs
+  const myApplications = applications.filter(app => 
+    myJobs.some(job => job.id === app.jobId)
   );
   
-  const unreadNotifications = notifications.filter(n => n.userId === user.id && !n.read).length;
+  // Stats
+  const activeJobs = myJobs.filter(job => job.status === 'open').length;
+  const totalApplicants = myApplications.length;
+  const pendingApplications = myApplications.filter(app => app.status === 'pending').length;
   
-  const pendingApplications = totalApplications.filter(app => app.status === 'pending');
+  // Data for charts
+  const applicationsByJob = myJobs.map(job => ({
+    name: job.title.length > 20 ? job.title.substring(0, 20) + '...' : job.title,
+    applications: myApplications.filter(app => app.jobId === job.id).length,
+  }));
+  
+  // Recent applications
+  const recentApplications = myApplications
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Job Provider Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome back, {user.name}!</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Provider Dashboard</h1>
+          <p className="mt-1 text-gray-600">Manage your job postings and applicants</p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Link to="/post-job">
+              <Plus className="h-4 w-4 mr-2" />
+              Post New Job
+            </Link>
+          </Button>
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Active Jobs</CardTitle>
-            <CardDescription>Your open positions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col">
-              <div className="text-3xl font-bold text-blue-600">{openJobs.length}</div>
-              <div className="text-gray-600 mt-2">of {providerJobs.length} total jobs</div>
-              <Button asChild className="mt-4" variant="outline" size="sm">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Active Jobs</p>
+                <h3 className="text-3xl font-bold text-gray-900 mt-1">{activeJobs}</h3>
+              </div>
+              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Briefcase className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button asChild variant="outline" size="sm" className="w-full">
                 <Link to="/my-jobs">View All Jobs</Link>
               </Button>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Applications</CardTitle>
-            <CardDescription>Candidates for your jobs</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col">
-              <div className="text-3xl font-bold text-blue-600">{totalApplications.length}</div>
-              <div className="flex gap-2 mt-2">
-                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                  {pendingApplications.length} Pending
-                </Badge>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total Applicants</p>
+                <h3 className="text-3xl font-bold text-gray-900 mt-1">{totalApplicants}</h3>
               </div>
-              <Button asChild className="mt-4" variant="outline" size="sm">
+              <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button asChild variant="outline" size="sm" className="w-full">
+                <Link to="/my-jobs">View Applicants</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Pending Applications</p>
+                <h3 className="text-3xl font-bold text-gray-900 mt-1">{pendingApplications}</h3>
+              </div>
+              <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <Clock className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button asChild variant="outline" size="sm" className="w-full">
                 <Link to="/my-jobs">Review Applications</Link>
               </Button>
             </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Notifications</CardTitle>
-            <CardDescription>Your recent activity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col">
-              <div className="text-3xl font-bold text-blue-600">{unreadNotifications}</div>
-              <div className="text-gray-600 mt-2">Unread notifications</div>
-              <Button asChild className="mt-4" variant="outline" size="sm">
-                <Link to="/notifications">View All Notifications</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">My Profile</CardTitle>
-            <CardDescription>Company information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="relative h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                {user.profilePicture ? (
-                  <img src={user.profilePicture} alt={user.name} className="h-12 w-12 rounded-full object-cover" />
-                ) : (
-                  <User className="h-6 w-6 text-blue-500" />
-                )}
-              </div>
-              <div>
-                <div className="font-medium">{user.name}</div>
-                <div className="text-sm text-gray-500">Job Provider</div>
-              </div>
-            </div>
-            <Button asChild className="mt-4 w-full" variant="outline" size="sm">
-              <Link to="/profile">Edit Profile</Link>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
       
+      {/* Applications Chart */}
+      <Card className="mb-8 shadow-sm">
+        <CardHeader>
+          <CardTitle>Applications per Job</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {applicationsByJob.length > 0 ? (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={applicationsByJob}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 80,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={80} 
+                    tick={{ fontSize: 12 }} 
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="applications" fill="#4f46e5" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No jobs data available. Post jobs to see statistics.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Recent Jobs</CardTitle>
-                <CardDescription>Jobs you've recently posted</CardDescription>
-              </div>
-              <Button asChild>
-                <Link to="/post-job">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Post New Job
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {providerJobs.length > 0 ? (
-                <div className="space-y-4">
-                  {providerJobs.slice(0, 3).map(job => (
-                    <div key={job.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <Link to={`/jobs/${job.id}`} className="text-lg font-medium text-blue-600 hover:underline">
-                            {job.title}
-                          </Link>
-                          <div className="flex items-center mt-1 text-gray-500 text-sm">
-                            <BriefcaseBusiness className="h-4 w-4 mr-1" />
-                            <span>
-                              Posted {new Date(job.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                        <Badge variant={job.status === 'open' ? "success" : "secondary"}>
-                          {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+        {/* Recent Jobs */}
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Recent Jobs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {myJobs.length > 0 ? (
+              <div className="space-y-4">
+                {myJobs.slice(0, 3).map((job) => (
+                  <div key={job.id} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-gray-50">
+                    <div className="h-10 w-10 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Briefcase className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <h4 className="text-sm font-medium truncate">
+                        <Link to={`/jobs/${job.id}`} className="hover:text-blue-600">
+                          {job.title}
+                        </Link>
+                      </h4>
+                      <div className="flex items-center mt-1">
+                        <DollarSign className="h-3 w-3 text-green-600 mr-1" />
+                        <span className="text-xs text-green-600 font-medium">${job.budget}</span>
+                        <span className="mx-2 text-gray-300">•</span>
+                        <Badge 
+                          variant={job.status === 'open' ? "default" : "outline"}
+                          className={job.status === 'open' ? "bg-green-500 hover:bg-green-600" : ""}
+                        >
+                          {job.status}
                         </Badge>
                       </div>
-                      
-                      <div className="flex items-center mt-3 gap-2">
-                        <div className="flex items-center text-gray-700">
-                          <Users className="h-4 w-4 mr-1" />
-                          {applications.filter(app => app.jobId === job.id).length} applicants
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-1 ml-4">
-                          {job.skills.slice(0, 3).map((skill, index) => (
-                            <Badge key={index} variant="outline" className="bg-gray-50">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {job.skills.length > 3 && (
-                            <Badge variant="outline" className="bg-gray-50">
-                              +{job.skills.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3 pt-3 border-t flex justify-end">
-                        <Button asChild size="sm" variant="outline">
-                          <Link to={`/jobs/${job.id}/applicants`}>
-                            View Applicants
-                          </Link>
-                        </Button>
-                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <BriefcaseBusiness className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900">No jobs posted yet</h3>
-                  <p className="text-gray-600 max-w-md mx-auto mt-1 mb-3">
-                    Create your first job posting to start finding talented freelancers.
-                  </p>
-                  <Button asChild>
-                    <Link to="/post-job">Post Your First Job</Link>
-                  </Button>
-                </div>
-              )}
-              
-              {providerJobs.length > 3 && (
-                <div className="mt-4 text-center">
-                  <Button asChild variant="outline">
-                    <Link to="/my-jobs">View All Jobs</Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-500">No jobs posted yet.</p>
+                <Button asChild className="mt-2">
+                  <Link to="/post-job">Post a Job</Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
         
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Notifications</CardTitle>
-              <CardDescription>Stay updated with your activity</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {notifications.filter(n => n.userId === user.id).slice(0, 5).length > 0 ? (
-                <div className="space-y-4">
-                  {notifications.filter(n => n.userId === user.id).slice(0, 5).map(notification => (
-                    <div key={notification.id} className={`p-3 rounded-lg border ${notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}`}>
-                      <div className="flex items-start gap-3">
-                        <Bell className={`h-5 w-5 ${notification.read ? 'text-gray-400' : 'text-blue-500'}`} />
+        {/* Recent Applications */}
+        <Card className="shadow-sm lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Recent Applications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentApplications.length > 0 ? (
+              <div className="space-y-4">
+                {recentApplications.map((application) => {
+                  const job = jobs.find(j => j.id === application.jobId);
+                  if (!job) return null;
+                  
+                  return (
+                    <div key={application.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-gray-800">{notification.message}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(notification.createdAt).toLocaleDateString()}
+                          <h4 className="font-medium">
+                            <Link 
+                              to={`/applicants/${application.freelancerId}`} 
+                              className="hover:text-blue-600"
+                            >
+                              Applicant ID: {application.freelancerId}
+                            </Link>
+                          </h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Applied for: <Link to={`/jobs/${job.id}`} className="hover:underline">{job.title}</Link>
                           </p>
                         </div>
+                        <Badge 
+                          variant={
+                            application.status === 'pending' ? "outline" : 
+                            application.status === 'accepted' ? "default" : 
+                            "secondary"
+                          }
+                          className={
+                            application.status === 'pending' ? "bg-yellow-100 text-yellow-800 border-yellow-200" : 
+                            application.status === 'accepted' ? "bg-green-100 text-green-800 border-green-200" : 
+                            "bg-red-100 text-red-800 border-red-200"
+                          }
+                        >
+                          {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Bell className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900">No notifications yet</h3>
-                  <p className="text-gray-600 mt-1">
-                    When you have new activity, it will appear here.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-500">No applications received yet.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

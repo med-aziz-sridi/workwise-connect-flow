@@ -1,21 +1,29 @@
 
-import React, { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import LoginForm from '@/components/auth/LoginForm';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Login: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (user) {
+      // Redirect based on user role
+      navigate(user.role === 'freelancer' ? '/freelancer/dashboard' : '/provider/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
   
   if (user) {
-    return <Navigate to="/" />;
+    return null; // Render nothing while redirecting
   }
   
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
       <div className="w-full max-w-md">
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-blue-500">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               Welcome back

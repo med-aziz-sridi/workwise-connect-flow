@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Job, Application, Project, Notification } from '@/types';
+import { Job, Application, Project, Notification, CreateJobInput } from '@/types';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -9,7 +9,7 @@ interface DataContextType {
   applications: Application[];
   projects: Project[];
   notifications: Notification[];
-  createJob: (job: Omit<Job, 'id' | 'createdAt' | 'providerId' | 'providerName' | 'status'>) => void;
+  createJob: (job: CreateJobInput) => void;
   applyToJob: (jobId: string, coverLetter: string) => void;
   updateApplicationStatus: (applicationId: string, status: 'accepted' | 'rejected') => void;
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => void;
@@ -27,7 +27,7 @@ export function useData() {
   return context;
 }
 
-// Sample data
+// Sample data - This will be replaced with Supabase data once integrated
 const SAMPLE_JOBS: Job[] = [
   {
     id: 'job1',
@@ -39,6 +39,7 @@ const SAMPLE_JOBS: Job[] = [
     providerName: 'Acme Corporation',
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'open',
+    coverImage: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600',
   },
   {
     id: 'job2',
@@ -50,6 +51,7 @@ const SAMPLE_JOBS: Job[] = [
     providerName: 'Acme Corporation',
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'open',
+    coverImage: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600',
   },
   {
     id: 'job3',
@@ -61,6 +63,7 @@ const SAMPLE_JOBS: Job[] = [
     providerName: 'Acme Corporation',
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'open',
+    coverImage: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600',
   },
 ];
 
@@ -122,7 +125,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('freeness_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  const createJob = (jobData: Omit<Job, 'id' | 'createdAt' | 'providerId' | 'providerName' | 'status'>) => {
+  const createJob = (jobData: CreateJobInput) => {
     if (!user || user.role !== 'provider') {
       toast({
         title: "Permission denied",
