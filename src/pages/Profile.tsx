@@ -83,11 +83,11 @@ const Profile = () => {
   };
   
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="container mx-auto px-4 py-8">
       <div className="relative w-full">
         {/* Cover image */}
         <div 
-          className="w-full h-64 bg-gray-200 rounded-xl overflow-hidden relative"
+          className="w-full h-72 bg-gray-200 rounded-xl overflow-hidden relative"
           style={{
             backgroundImage: coverPicture ? `url(${coverPicture})` : undefined,
             backgroundSize: 'cover',
@@ -157,9 +157,9 @@ const Profile = () => {
         </div>
       </div>
       
-      <div className="mt-20">
+      <div className="mt-24">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             {user.role === 'freelancer' && (
               <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
@@ -171,9 +171,9 @@ const Profile = () => {
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 {isEditing ? (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div className="grid gap-2">
                       <Label htmlFor="name">Name</Label>
                       <Input 
@@ -181,6 +181,7 @@ const Profile = () => {
                         value={name} 
                         onChange={(e) => setName(e.target.value)} 
                         placeholder="Your name"
+                        className="max-w-md"
                       />
                     </div>
                     
@@ -208,7 +209,7 @@ const Profile = () => {
                             </Badge>
                           ))}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 max-w-md">
                           <Input 
                             id="skills" 
                             value={skillInput} 
@@ -224,19 +225,19 @@ const Profile = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">About</h3>
-                      <p className="mt-1 text-gray-900">{bio || 'No bio provided'}</p>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">About</h3>
+                      <p className="mt-1 text-gray-900 leading-relaxed">{bio || 'No bio provided'}</p>
                     </div>
                     
                     {user.role === 'freelancer' && (
                       <div>
-                        <h3 className="text-sm font-medium text-gray-500">Skills</h3>
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Skills</h3>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {skills.length > 0 ? (
                             skills.map((skill) => (
-                              <Badge key={skill} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                              <Badge key={skill} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200 px-3 py-1">
                                 {skill}
                               </Badge>
                             ))
@@ -248,7 +249,7 @@ const Profile = () => {
                     )}
                     
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Member since</h3>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Member since</h3>
                       <p className="mt-1 text-gray-900">{new Date(user.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
@@ -270,7 +271,7 @@ const Profile = () => {
                 </CardHeader>
                 <CardContent>
                   {userProjects.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {userProjects.map((project) => (
                         <ProjectCard 
                           key={project.id} 
@@ -280,7 +281,7 @@ const Profile = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                    <div className="text-center py-12 border-2 border-dashed rounded-lg">
                       <User className="h-12 w-12 mx-auto text-gray-400" />
                       <h3 className="mt-2 text-sm font-medium text-gray-900">No projects yet</h3>
                       <p className="mt-1 text-sm text-gray-500">

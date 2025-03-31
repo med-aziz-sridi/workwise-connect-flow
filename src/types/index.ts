@@ -11,6 +11,7 @@ export interface User {
   bio?: string;
   skills?: string[];
   createdAt: string;
+  chats?: string[]; // IDs of chats the user is participating in
 }
 
 export interface Job {
@@ -52,6 +53,23 @@ export interface Notification {
   createdAt: string;
   type: 'application' | 'job' | 'message';
   relatedId: string;
+}
+
+export interface Message {
+  id: string;
+  chatId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  read: boolean;
+}
+
+export interface Chat {
+  id: string;
+  participants: string[]; // User IDs
+  jobId?: string; // Optional link to a job
+  lastMessageAt: string;
+  createdAt: string;
 }
 
 // Update DataContext with coverImage

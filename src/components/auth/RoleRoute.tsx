@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
 
@@ -11,6 +11,7 @@ interface RoleRouteProps {
 
 const RoleRoute: React.FC<RoleRouteProps> = ({ children, role }) => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -21,7 +22,8 @@ const RoleRoute: React.FC<RoleRouteProps> = ({ children, role }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Save the location they were trying to go to
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (user.role !== role) {
