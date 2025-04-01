@@ -1,20 +1,19 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useData } from '@/context/DataContext';
 import { Experience, Certification } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Briefcase, Award, Plus, X, Calendar, Building, ExternalLink } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 const experienceSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -34,12 +33,20 @@ const certificationSchema = z.object({
 });
 
 const ExperienceCertifications: React.FC = () => {
-  const { profile, updateProfile } = useAuth();
+  const { profile } = useAuth();
+  const { 
+    experiences, 
+    certifications, 
+    isLoading, 
+    addExperience, 
+    deleteExperience,
+    addCertification,
+    deleteCertification
+  } = useData();
+  
   const [activeTab, setActiveTab] = useState<'experience' | 'certifications'>('experience');
   const [isAddingExperience, setIsAddingExperience] = useState(false);
   const [isAddingCertification, setIsAddingCertification] = useState(false);
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [certifications, setCertifications] = useState<Certification[]>([]);
 
   const experienceForm = useForm<z.infer<typeof experienceSchema>>({
     resolver: zodResolver(experienceSchema),
@@ -67,35 +74,29 @@ const ExperienceCertifications: React.FC = () => {
   if (!profile) return null;
 
   const onExperienceSubmit = (values: z.infer<typeof experienceSchema>) => {
-    const newExperience: Experience = {
-      id: Date.now().toString(),
-      ...values,
-      freelancerId: profile.id,
-    };
-    
-    setExperiences([...experiences, newExperience]);
+    addExperience(values);
     setIsAddingExperience(false);
     experienceForm.reset();
   };
 
   const onCertificationSubmit = (values: z.infer<typeof certificationSchema>) => {
-    const newCertification: Certification = {
-      id: Date.now().toString(),
-      ...values,
-      freelancerId: profile.id,
-    };
-    
-    setCertifications([...certifications, newCertification]);
+    addCertification(values);
     setIsAddingCertification(false);
     certificationForm.reset();
   };
 
-  const removeExperience = (id: string) => {
-    setExperiences(experiences.filter(exp => exp.id !== id));
+  const handleDeleteExperience = (id: string) => {
+    if (confirm('Are you sure you want to delete this experience?')) {
+      deleteExperience(id);
+      toast.success('Experience deleted successfully');
+    }
   };
 
-  const removeCertification = (id: string) => {
-    setCertifications(certifications.filter(cert => cert.id !== id));
+  const handleDeleteCertification = (id: string) => {
+    if (confirm('Are you sure you want to delete this certification?')) {
+      deleteCertification(id);
+      toast.success('Certification deleted successfully');
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -258,14 +259,19 @@ const ExperienceCertifications: React.FC = () => {
           )}
 
           <div className="space-y-4">
-            {experiences.length > 0 ? (
+            {isLoading.experiences ? (
+              <div className="text-center py-8">
+                <Briefcase className="h-8 w-8 mx-auto mb-2 animate-pulse" />
+                <p>Loading experiences...</p>
+              </div>
+            ) : experiences.length > 0 ? (
               experiences.map((exp) => (
                 <Card key={exp.id} className="relative group">
                   <Button 
                     variant="destructive" 
                     size="icon" 
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeExperience(exp.id)}
+                    onClick={() => handleDeleteExperience(exp.id)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -415,14 +421,19 @@ const ExperienceCertifications: React.FC = () => {
           )}
 
           <div className="space-y-4">
-            {certifications.length > 0 ? (
+            {isLoading.certifications ? (
+              <div className="text-center py-8">
+                <Award className="h-8 w-8 mx-auto mb-2 animate-pulse" />
+                <p>Loading certifications...</p>
+              </div>
+            ) : certifications.length > 0 ? (
               certifications.map((cert) => (
                 <Card key={cert.id} className="relative group">
                   <Button 
                     variant="destructive" 
                     size="icon" 
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeCertification(cert.id)}
+                    onClick={() => handleDeleteCertification(cert.id)}
                   >
                     <X className="h-4 w-4" />
                   </Button>

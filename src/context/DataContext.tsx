@@ -1,9 +1,8 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Job, Application, Project, Notification, CreateJobInput, Profile } from '@/types';
+import { Job, Application, Project, Notification, CreateJobInput, Profile, Experience, Certification } from '@/types';
 import { toast as sonnerToast } from 'sonner';
 
 interface DataContextType {
@@ -11,11 +10,15 @@ interface DataContextType {
   applications: Application[];
   projects: Project[];
   notifications: Notification[];
+  experiences: Experience[];
+  certifications: Certification[];
   isLoading: {
     jobs: boolean;
     applications: boolean;
     projects: boolean;
     notifications: boolean;
+    experiences: boolean;
+    certifications: boolean;
   };
   createJob: (job: CreateJobInput) => Promise<void>;
   applyToJob: (jobId: string, coverLetter: string) => Promise<void>;
@@ -27,6 +30,12 @@ interface DataContextType {
   refreshApplications: () => Promise<void>;
   refreshProjects: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
+  refreshExperiences: () => Promise<void>;
+  refreshCertifications: () => Promise<void>;
+  addExperience: (experience: Omit<Experience, 'id' | 'freelancerId'>) => Promise<void>;
+  deleteExperience: (experienceId: string) => Promise<void>;
+  addCertification: (certification: Omit<Certification, 'id' | 'freelancerId'>) => Promise<void>;
+  deleteCertification: (certificationId: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -47,15 +56,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [applications, setApplications] = useState<Application[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
   
   const [isLoading, setIsLoading] = useState({
     jobs: false,
     applications: false,
     projects: false,
     notifications: false,
+    experiences: false,
+    certifications: false,
   });
 
-  // Fetch jobs from Supabase
   const fetchJobs = async () => {
     setIsLoading(prev => ({ ...prev, jobs: true }));
     try {
@@ -90,7 +102,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fetch applications relevant to the user
   const fetchApplications = async () => {
     if (!user) return;
     
@@ -137,7 +148,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fetch projects
   const fetchProjects = async () => {
     if (!user) return;
     
@@ -147,7 +157,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('projects')
         .select('*');
       
-      // If user is a freelancer, only fetch their projects
       if (profile?.role === 'freelancer') {
         query.eq('freelancer_id', user.id);
       }
@@ -173,7 +182,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fetch notifications
   const fetchNotifications = async () => {
     if (!user) return;
     
@@ -205,27 +213,98 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Initial data loading
+  const fetchExperiences = async () => {
+    if (!user) return;
+    
+    setIsLoading(prev => ({ ...prev, experiences: true }));
+    try {
+      const query = supabase
+        .from('experiences')
+        .select('*');
+      
+      if (profile?.role === 'freelancer') {
+        query.eq('freelancer_id', user.id);
+      }
+      
+      const { data, error } = await query.order('start_date', { ascending: false });
+      
+      if (error) throw error;
+      
+      const formattedExperiences = data.map(exp => ({
+        id: exp.id,
+        title: exp.title,
+        company: exp.company,
+        description: exp.description,
+        startDate: exp.start_date,
+        endDate: exp.end_date,
+        current: exp.current,
+        freelancerId: exp.freelancer_id,
+      }));
+      
+      setExperiences(formattedExperiences);
+    } catch (error) {
+      console.error('Error fetching experiences:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, experiences: false }));
+    }
+  };
+
+  const fetchCertifications = async () => {
+    if (!user) return;
+    
+    setIsLoading(prev => ({ ...prev, certifications: true }));
+    try {
+      const query = supabase
+        .from('certifications')
+        .select('*');
+      
+      if (profile?.role === 'freelancer') {
+        query.eq('freelancer_id', user.id);
+      }
+      
+      const { data, error } = await query.order('issue_date', { ascending: false });
+      
+      if (error) throw error;
+      
+      const formattedCertifications = data.map(cert => ({
+        id: cert.id,
+        name: cert.name,
+        issuer: cert.issuer,
+        issueDate: cert.issue_date,
+        expiryDate: cert.expiry_date,
+        credentialUrl: cert.credential_url,
+        freelancerId: cert.freelancer_id,
+      }));
+      
+      setCertifications(formattedCertifications);
+    } catch (error) {
+      console.error('Error fetching certifications:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, certifications: false }));
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchJobs();
       fetchApplications();
       fetchProjects();
       fetchNotifications();
+      fetchExperiences();
+      fetchCertifications();
     } else {
-      // Load only public data when not authenticated
       fetchJobs();
       setApplications([]);
       setProjects([]);
       setNotifications([]);
+      setExperiences([]);
+      setCertifications([]);
     }
   }, [user]);
 
-  // Set up realtime subscriptions for updates
   useEffect(() => {
     if (!user) return;
 
-    // Subscribe to relevant tables
     const jobsChannel = supabase
       .channel('jobs-changes')
       .on('postgres_changes', {
@@ -273,7 +352,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, (payload) => {
         fetchNotifications();
         
-        // Show toast notification for new notifications
         if (payload.eventType === 'INSERT') {
           sonnerToast.info('New Notification', {
             description: payload.new.message,
@@ -282,12 +360,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
       .subscribe();
 
-    // Cleanup function
+    const experiencesChannel = supabase
+      .channel('experiences-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'experiences',
+        filter: profile?.role === 'freelancer' ? `freelancer_id=eq.${user.id}` : undefined,
+      }, () => {
+        fetchExperiences();
+      })
+      .subscribe();
+
+    const certificationsChannel = supabase
+      .channel('certifications-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'certifications',
+        filter: profile?.role === 'freelancer' ? `freelancer_id=eq.${user.id}` : undefined,
+      }, () => {
+        fetchCertifications();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(jobsChannel);
       supabase.removeChannel(applicationsChannel);
       supabase.removeChannel(projectsChannel);
       supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(experiencesChannel);
+      supabase.removeChannel(certificationsChannel);
     };
   }, [user, profile]);
 
@@ -320,7 +423,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Your job posting has been created successfully",
       });
       
-      // Refresh jobs list
       fetchJobs();
     } catch (error) {
       console.error('Error creating job:', error);
@@ -343,7 +445,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      // Check if already applied
       const { data: existingApplications, error: checkError } = await supabase
         .from('applications')
         .select('id')
@@ -361,7 +462,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Get job details for notification
       const { data: jobData, error: jobError } = await supabase
         .from('jobs')
         .select('title, provider_id')
@@ -370,7 +470,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (jobError) throw jobError;
       
-      // Submit application
       const { data: application, error: applicationError } = await supabase
         .from('applications')
         .insert({
@@ -383,7 +482,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (applicationError) throw applicationError;
       
-      // Create notification for job provider
       const { error: notificationError } = await supabase
         .from('notifications')
         .insert({
@@ -400,7 +498,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Your job application has been submitted successfully",
       });
       
-      // Refresh applications list
       fetchApplications();
     } catch (error) {
       console.error('Error applying to job:', error);
@@ -423,7 +520,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      // Get application details
       const { data: applicationData, error: applicationError } = await supabase
         .from('applications')
         .select(`
@@ -435,7 +531,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (applicationError) throw applicationError;
       
-      // Verify ownership
       if (applicationData.jobs.provider_id !== user.id) {
         toast({
           title: "Permission denied",
@@ -445,7 +540,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Update application status
       const { error: updateError } = await supabase
         .from('applications')
         .update({ status })
@@ -453,7 +547,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (updateError) throw updateError;
       
-      // Create notification for the freelancer
       const { error: notificationError } = await supabase
         .from('notifications')
         .insert({
@@ -470,7 +563,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `Application has been ${status}`,
       });
       
-      // Refresh applications list
       fetchApplications();
     } catch (error) {
       console.error('Error updating application status:', error);
@@ -509,7 +601,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Your project has been added to your portfolio",
       });
       
-      // Refresh projects list
       fetchProjects();
     } catch (error) {
       console.error('Error adding project:', error);
@@ -532,7 +623,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      // Verify ownership
       const { data: projectData, error: checkError } = await supabase
         .from('projects')
         .select('freelancer_id')
@@ -550,7 +640,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Delete project
       const { error: deleteError } = await supabase
         .from('projects')
         .delete()
@@ -563,7 +652,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Your project has been removed from your portfolio",
       });
       
-      // Refresh projects list
       fetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
@@ -587,7 +675,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Update local state
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === notificationId 
@@ -600,11 +687,195 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Functions to manually refresh data
+  const addExperience = async (experienceData: Omit<Experience, 'id' | 'freelancerId'>) => {
+    if (!user || profile?.role !== 'freelancer') {
+      toast({
+        title: "Permission denied",
+        description: "Only freelancers can add experiences",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('experiences')
+        .insert({
+          title: experienceData.title,
+          company: experienceData.company,
+          description: experienceData.description,
+          start_date: experienceData.startDate,
+          end_date: experienceData.endDate,
+          current: experienceData.current,
+          freelancer_id: user.id,
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Experience added",
+        description: "Your experience has been added successfully",
+      });
+      
+      fetchExperiences();
+    } catch (error) {
+      console.error('Error adding experience:', error);
+      toast({
+        title: "Experience addition failed",
+        description: "An error occurred while adding your experience",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteExperience = async (experienceId: string) => {
+    if (!user || profile?.role !== 'freelancer') {
+      toast({
+        title: "Permission denied",
+        description: "Only freelancers can delete experiences",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { data: experienceData, error: checkError } = await supabase
+        .from('experiences')
+        .select('freelancer_id')
+        .eq('id', experienceId)
+        .single();
+      
+      if (checkError) throw checkError;
+      
+      if (experienceData.freelancer_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You can only delete your own experiences",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const { error: deleteError } = await supabase
+        .from('experiences')
+        .delete()
+        .eq('id', experienceId);
+      
+      if (deleteError) throw deleteError;
+      
+      toast({
+        title: "Experience deleted",
+        description: "Your experience has been removed from your profile",
+      });
+      
+      fetchExperiences();
+    } catch (error) {
+      console.error('Error deleting experience:', error);
+      toast({
+        title: "Experience deletion failed",
+        description: "An error occurred while deleting your experience",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addCertification = async (certificationData: Omit<Certification, 'id' | 'freelancerId'>) => {
+    if (!user || profile?.role !== 'freelancer') {
+      toast({
+        title: "Permission denied",
+        description: "Only freelancers can add certifications",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('certifications')
+        .insert({
+          name: certificationData.name,
+          issuer: certificationData.issuer,
+          issue_date: certificationData.issueDate,
+          expiry_date: certificationData.expiryDate,
+          credential_url: certificationData.credentialUrl,
+          freelancer_id: user.id,
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Certification added",
+        description: "Your certification has been added successfully",
+      });
+      
+      fetchCertifications();
+    } catch (error) {
+      console.error('Error adding certification:', error);
+      toast({
+        title: "Certification addition failed",
+        description: "An error occurred while adding your certification",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteCertification = async (certificationId: string) => {
+    if (!user || profile?.role !== 'freelancer') {
+      toast({
+        title: "Permission denied",
+        description: "Only freelancers can delete certifications",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { data: certificationData, error: checkError } = await supabase
+        .from('certifications')
+        .select('freelancer_id')
+        .eq('id', certificationId)
+        .single();
+      
+      if (checkError) throw checkError;
+      
+      if (certificationData.freelancer_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You can only delete your own certifications",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const { error: deleteError } = await supabase
+        .from('certifications')
+        .delete()
+        .eq('id', certificationId);
+      
+      if (deleteError) throw deleteError;
+      
+      toast({
+        title: "Certification deleted",
+        description: "Your certification has been removed from your profile",
+      });
+      
+      fetchCertifications();
+    } catch (error) {
+      console.error('Error deleting certification:', error);
+      toast({
+        title: "Certification deletion failed",
+        description: "An error occurred while deleting your certification",
+        variant: "destructive",
+      });
+    }
+  };
+
   const refreshJobs = fetchJobs;
   const refreshApplications = fetchApplications;
   const refreshProjects = fetchProjects;
   const refreshNotifications = fetchNotifications;
+  const refreshExperiences = fetchExperiences;
+  const refreshCertifications = fetchCertifications;
 
   return (
     <DataContext.Provider 
@@ -613,6 +884,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         applications, 
         projects, 
         notifications,
+        experiences,
+        certifications,
         isLoading,
         createJob,
         applyToJob,
@@ -624,6 +897,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshApplications,
         refreshProjects,
         refreshNotifications,
+        refreshExperiences,
+        refreshCertifications,
+        addExperience,
+        deleteExperience,
+        addCertification,
+        deleteCertification,
       }}
     >
       {children}

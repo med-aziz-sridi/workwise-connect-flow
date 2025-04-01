@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileDetails from '@/components/profile/ProfileDetails';
@@ -8,6 +8,8 @@ import ExperienceCertifications from '@/components/profile/ExperienceCertificati
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Briefcase, FileText, Award, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const Profile: React.FC = () => {
   const { profile, user, isLoading } = useAuth();
@@ -77,8 +79,13 @@ const Profile: React.FC = () => {
         <TabsContent value="settings">
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-xl font-bold mb-6">Account Settings</h2>
-              <p className="text-gray-600">Account settings will be added here.</p>
+              <Button asChild variant="outline" className="mb-4">
+                <Link to="/settings">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Manage Account Settings
+                </Link>
+              </Button>
+              <p className="text-gray-600">Visit the settings page to manage your account preferences, security settings, and more.</p>
             </CardContent>
           </Card>
         </TabsContent>
