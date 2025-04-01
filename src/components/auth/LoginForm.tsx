@@ -11,6 +11,15 @@ import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Mail } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const loginSchema = z.object({
   email: z
@@ -23,11 +32,21 @@ const loginSchema = z.object({
   role: z.enum(['freelancer', 'provider']),
 });
 
+const resetPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Must be a valid email' }),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const { loginWithEmail, loginWithGoogle, isLoading } = useAuth();
+  const { loginWithEmail, loginWithGoogle, resetPassword, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -35,6 +54,13 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
       email: '',
       password: '',
       role: 'freelancer',
+    },
+  });
+
+  const resetForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: '',
     },
   });
 
@@ -55,6 +81,17 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
       // Note: onSuccess will not be called here since Google OAuth redirects
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to login with Google');
+    }
+  };
+
+  const handleResetPassword = async (data: ResetPasswordFormValues) => {
+    try {
+      await resetPassword(data.email);
+      setResetSuccess(true);
+    } catch (err) {
+      resetForm.setError('email', { 
+        message: err instanceof Error ? err.message : 'Failed to send reset email' 
+      });
     }
   };
 
@@ -153,6 +190,65 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
           />
           
           {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+          
+          <div className="flex justify-end">
+            <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="link" className="px-0 text-sm" type="button">
+                  Forgot password?
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Reset your password</DialogTitle>
+                  <DialogDescription>
+                    Enter your email address and we'll send you a link to reset your password.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {resetSuccess ? (
+                  <div className="space-y-4 py-4">
+                    <p className="text-sm text-green-600">
+                      Password reset link has been sent to your email.
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Please check your inbox and follow the instructions to reset your password.
+                    </p>
+                  </div>
+                ) : (
+                  <Form {...resetForm}>
+                    <form onSubmit={resetForm.handleSubmit(handleResetPassword)} className="space-y-4">
+                      <FormField
+                        control={resetForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input placeholder="name@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <DialogFooter>
+                        <Button type="submit" disabled={isLoading}>
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            'Send reset link'
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
           
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (

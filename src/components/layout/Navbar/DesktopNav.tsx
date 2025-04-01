@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
@@ -32,6 +32,12 @@ const DesktopNav: React.FC = () => {
       )}
       
       <Link to="/messages" className="relative">
+        <Button variant="ghost" size="icon">
+          <MessageSquare className="h-5 w-5" />
+        </Button>
+      </Link>
+      
+      <Link to="/notifications" className="relative">
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
           {unreadNotifications > 0 && (

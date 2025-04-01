@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import Logo from './Logo';
 import DesktopNav from './DesktopNav';
 import MobileNav from './MobileNav';
-import UserMenu from './UserMenu';
 
 const Navbar: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -18,7 +18,9 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Logo />
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <Logo />
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -42,16 +44,17 @@ const Navbar: React.FC = () => {
 
           {/* Mobile menu button */}
           <div className="flex md:hidden">
-            {user && <UserMenu />}
-            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(true)}>
-              <Menu className="h-6 w-6" />
-            </Button>
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <MobileNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+            </Sheet>
           </div>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      <MobileNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
     </nav>
   );
 };

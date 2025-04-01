@@ -1,8 +1,8 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Session, User, AuthError } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, UserRole } from '@/types';
+import { Profile, UserRole, User } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
@@ -15,6 +15,7 @@ interface AuthContextType {
   registerWithEmail: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<Profile>) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,12 +35,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
+  const mapProfileToUser = (profileData: Profile): User => {
+    return {
+      id: profileData.id,
+      name: profileData.name,
+      email: profileData.email,
+      role: profileData.role,
+      profilePicture: profileData.profile_picture,
+      bio: profileData.bio,
+      skills: profileData.skills || [],
+      createdAt: profileData.created_at,
+      coverPicture: profileData.cover_picture,
+    };
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         setSession(currentSession);
-        setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
           setIsLoading(true);
@@ -55,8 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (error) {
                 console.error('Error fetching profile:', error);
                 setProfile(null);
+                setUser(null);
               } else {
                 setProfile(profileData as Profile);
+                setUser(mapProfileToUser(profileData as Profile));
               }
               setIsLoading(false);
             }, 0);
@@ -66,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } else {
           setProfile(null);
+          setUser(null);
           setIsLoading(false);
         }
       }
@@ -76,7 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         setSession(existingSession);
-        setUser(existingSession?.user ?? null);
 
         if (existingSession?.user) {
           const { data: profileData, error } = await supabase
@@ -88,8 +104,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (error) {
             console.error('Error fetching profile:', error);
             setProfile(null);
+            setUser(null);
           } else {
             setProfile(profileData as Profile);
+            setUser(mapProfileToUser(profileData as Profile));
           }
         }
       } catch (error) {
@@ -201,6 +219,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for a link to reset your password",
+      });
+    } catch (error) {
+      const authError = error as AuthError;
+      toast({
+        title: "Password reset failed",
+        description: authError.message || "An error occurred while sending the reset email",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -230,7 +271,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       // Update local profile state
-      setProfile({ ...profile, ...userData });
+      const updatedProfile = { ...profile, ...userData };
+      setProfile(updatedProfile);
+      setUser(mapProfileToUser(updatedProfile));
       
       toast({
         title: "Profile updated",
@@ -257,6 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       registerWithEmail,
       logout,
       updateProfile,
+      resetPassword,
     }}>
       {children}
     </AuthContext.Provider>
