@@ -20,10 +20,11 @@ const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
   const getInitials = (name?: string) => {
-    if (!name) return '';
+    if (!name || typeof name !== "string" || name.trim().length === 0) return "U";
     return name
+      .trim()
       .split(' ')
-      .map(part => part[0])
+      .map(part => part[0] || '')
       .join('')
       .toUpperCase();
   };

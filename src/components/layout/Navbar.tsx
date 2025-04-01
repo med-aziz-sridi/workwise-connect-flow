@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, Menu, X, User, Briefcase, LogOut, ArrowLeft } from 'lucide-react';
+import { Bell, Menu, X, User, Briefcase, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,8 +36,6 @@ const Navbar: React.FC = () => {
       .toUpperCase();
   };
   
-  
-
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
@@ -88,7 +86,7 @@ const Navbar: React.FC = () => {
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.profilePicture} alt={user.name} />
-                        <AvatarFallback>{const initials = getInitials(user?.name ?? "Unknown User")}</AvatarFallback>
+                        <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -166,7 +164,7 @@ const Navbar: React.FC = () => {
                         <div className="flex items-center space-x-3 mb-4">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.profilePicture} alt={user.name} />
-                            <AvatarFallback>{const initials = getInitials(user?.name ?? "Unknown User")}</AvatarFallback>
+                            <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{user.name}</p>

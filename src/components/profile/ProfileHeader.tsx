@@ -16,10 +16,12 @@ const ProfileHeader: React.FC = () => {
 
   if (!user || !profile) return null;
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name || typeof name !== "string" || name.trim().length === 0) return "U";
     return name
+      .trim()
       .split(' ')
-      .map(part => part[0])
+      .map(part => part[0] || '')
       .join('')
       .toUpperCase();
   };
