@@ -27,14 +27,15 @@ const Navbar: React.FC = () => {
   ).length;
 
   const getInitials = (name?: string) => {
-    if (!name || typeof name !== "string") return ""; 
+    if (!name || typeof name !== "string" || name.trim().length === 0) return "U";
     return name
-      .trim() 
+      .trim()
       .split(" ")
       .map((n) => n[0] || "") 
       .join("")
       .toUpperCase();
   };
+  
   
 
   const closeMenu = () => setIsMenuOpen(false);
@@ -87,7 +88,7 @@ const Navbar: React.FC = () => {
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.profilePicture} alt={user.name} />
-                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                        <AvatarFallback>{const initials = getInitials(user?.name ?? "Unknown User")}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -165,7 +166,7 @@ const Navbar: React.FC = () => {
                         <div className="flex items-center space-x-3 mb-4">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.profilePicture} alt={user.name} />
-                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                            <AvatarFallback>{const initials = getInitials(user?.name ?? "Unknown User")}</AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{user.name}</p>
