@@ -32,7 +32,7 @@ const jobSchema = z.object({
   budget: z
     .string()
     .regex(/^\d+$/, { message: 'Budget must be a number' })
-    .transform(Number), // Change this to transform to Number directly
+    .transform(Number), // Transform to Number directly
   skills: z
     .array(z.string())
     .min(1, { message: 'Select at least one skill' }),
@@ -163,11 +163,6 @@ const PostJob: React.FC = () => {
                         type="text" 
                         placeholder="e.g. 500"
                         {...field}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          
-                          field.onChange(value ? parseFloat(value) : '');
-                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -175,7 +170,6 @@ const PostJob: React.FC = () => {
                 )}
               />
 
-              
               <FormField
                 control={form.control}
                 name="skills"

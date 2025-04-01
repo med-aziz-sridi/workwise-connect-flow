@@ -8,11 +8,13 @@ import ExperienceCertifications from '@/components/profile/ExperienceCertificati
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Briefcase, FileText, Award, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Profile: React.FC = () => {
   const { profile, user, isLoading } = useAuth();
+  const location = useLocation();
+  const activeTab = new URLSearchParams(location.search).get('tab') || 'profile';
 
   if (isLoading || !profile || !user) {
     return (
@@ -26,7 +28,7 @@ const Profile: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <ProfileHeader />
       
-      <Tabs defaultValue="profile" className="w-full mt-8">
+      <Tabs defaultValue={activeTab} className="w-full mt-8">
         <TabsList className="mb-8">
           <TabsTrigger value="profile" className="flex items-center">
             <FileText className="h-4 w-4 mr-2" />
@@ -46,19 +48,21 @@ const Profile: React.FC = () => {
             </>
           )}
           
-          <TabsTrigger value="settings" className="flex items-center">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+          <TabsTrigger value="settings" className="flex items-center" asChild>
+            <Link to="/settings">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Link>
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="animate-in fade-in-50 duration-300">
           <ProfileDetails />
         </TabsContent>
         
         {profile.role === 'freelancer' && (
           <>
-            <TabsContent value="portfolio">
+            <TabsContent value="portfolio" className="animate-in fade-in-50 duration-300">
               <Card>
                 <CardContent className="p-6">
                   <FreelancerPortfolio />
@@ -66,7 +70,7 @@ const Profile: React.FC = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="experience">
+            <TabsContent value="experience" className="animate-in fade-in-50 duration-300">
               <Card>
                 <CardContent className="p-6">
                   <ExperienceCertifications />
@@ -75,20 +79,6 @@ const Profile: React.FC = () => {
             </TabsContent>
           </>
         )}
-        
-        <TabsContent value="settings">
-          <Card>
-            <CardContent className="p-6">
-              <Button asChild variant="outline" className="mb-4">
-                <Link to="/settings">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Manage Account Settings
-                </Link>
-              </Button>
-              <p className="text-gray-600">Visit the settings page to manage your account preferences, security settings, and more.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
