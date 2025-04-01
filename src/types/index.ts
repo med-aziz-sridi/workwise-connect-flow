@@ -27,6 +27,10 @@ export interface Profile {
   created_at: string;
 }
 
+export type JobStatus = 'open' | 'closed' | 'completed';
+export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
+export type NotificationType = 'application' | 'message' | 'system' | 'job';
+
 export interface Job {
   id: string;
   title: string;
@@ -36,7 +40,7 @@ export interface Job {
   providerId: string;
   providerName: string;
   createdAt: string;
-  status: 'open' | 'closed' | 'completed';
+  status: JobStatus;
   coverImage?: string;
 }
 
@@ -66,7 +70,7 @@ export interface Application {
   jobId: string;
   freelancerId: string;
   coverLetter: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: ApplicationStatus;
   createdAt: string;
   job?: JobInfo;
   freelancer?: FreelancerInfo;
@@ -87,7 +91,7 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
-  type: 'application' | 'message' | 'system';
+  type: NotificationType;
   relatedId?: string;
 }
 
@@ -112,4 +116,25 @@ export interface Conversation {
     name: string;
     profilePicture?: string;
   };
+}
+
+export interface Experience {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  startDate: string;
+  endDate?: string;
+  current: boolean;
+  freelancerId: string;
+}
+
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate?: string;
+  credentialUrl?: string;
+  freelancerId: string;
 }

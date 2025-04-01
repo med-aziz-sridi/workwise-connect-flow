@@ -8,9 +8,10 @@ import { Trash } from 'lucide-react';
 export interface ProjectCardProps {
   project: Project;
   onDelete?: () => void;
+  showActions?: boolean;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, showActions = false }) => {
   const { title, description, images } = project;
   
   return (
@@ -30,7 +31,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
           )}
         </div>
         
-        {onDelete && (
+        {showActions && onDelete && (
           <Button
             variant="destructive"
             size="icon"
