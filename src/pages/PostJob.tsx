@@ -157,18 +157,24 @@ const PostJob: React.FC = () => {
                 name="budget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Budget (USD)</FormLabel>
+                    <FormLabel>Budget (TND)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="e.g. 500" 
-                        {...field} 
+                      <Input
+                        type="text" 
+                        placeholder="e.g. 500"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          
+                          field.onChange(value ? parseFloat(value) : '');
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               
               <FormField
                 control={form.control}
