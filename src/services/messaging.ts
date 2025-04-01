@@ -8,8 +8,8 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
       .from('conversations')
       .select(`
         *,
-        participant1:participant1_id (id, name, profile_picture),
-        participant2:participant2_id (id, name, profile_picture)
+        profiles:participant1_id (id, name, profile_picture),
+        profiles2:participant2_id (id, name, profile_picture)
       `)
       .or(`participant1_id.eq.${userId},participant2_id.eq.${userId}`)
       .order('last_message_at', { ascending: false });
@@ -17,8 +17,9 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
     if (error) throw error;
     
     return data.map(conv => {
-      const otherParticipantId = conv.participant1_id === userId ? conv.participant2_id : conv.participant1_id;
-      const otherParticipant = conv.participant1_id === userId ? conv.participant2 : conv.participant1;
+      const isParticipant1 = conv.participant1_id === userId;
+      const otherParticipantId = isParticipant1 ? conv.participant2_id : conv.participant1_id;
+      const otherParticipant = isParticipant1 ? conv.profiles2 : conv.profiles;
       
       return {
         id: conv.id,

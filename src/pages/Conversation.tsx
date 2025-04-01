@@ -34,8 +34,8 @@ const Conversation: React.FC = () => {
           .from('conversations')
           .select(`
             participant1_id, participant2_id,
-            participant1:participant1_id (name, profile_picture),
-            participant2:participant2_id (name, profile_picture)
+            profiles:participant1_id(name, profile_picture),
+            profiles2:participant2_id(name, profile_picture)
           `)
           .eq('id', conversationId)
           .single();
@@ -45,11 +45,13 @@ const Conversation: React.FC = () => {
         // Determine the other participant
         const isParticipant1 = conversation.participant1_id === user.id;
         const otherParticipantId = isParticipant1 ? conversation.participant2_id : conversation.participant1_id;
-        const otherParticipant = isParticipant1 ? conversation.participant2 : conversation.participant1;
+        const otherParticipantData = isParticipant1 ? conversation.profiles2 : conversation.profiles;
         
         setReceiverId(otherParticipantId);
-        setReceiverName(otherParticipant.name);
-        setReceiverPicture(otherParticipant.profile_picture);
+        if (otherParticipantData) {
+          setReceiverName(otherParticipantData.name);
+          setReceiverPicture(otherParticipantData.profile_picture);
+        }
         
         // Get messages
         const messagesData = await getMessages(conversationId);

@@ -51,6 +51,39 @@ export type Database = {
           },
         ]
       }
+      certifications: {
+        Row: {
+          created_at: string
+          credential_url: string | null
+          expiry_date: string | null
+          freelancer_id: string
+          id: string
+          issue_date: string
+          issuer: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          credential_url?: string | null
+          expiry_date?: string | null
+          freelancer_id: string
+          id?: string
+          issue_date: string
+          issuer: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          credential_url?: string | null
+          expiry_date?: string | null
+          freelancer_id?: string
+          id?: string
+          issue_date?: string
+          issuer?: string
+          name?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           id: string
@@ -96,6 +129,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      experiences: {
+        Row: {
+          company: string
+          created_at: string
+          current: boolean
+          description: string | null
+          end_date: string | null
+          freelancer_id: string
+          id: string
+          start_date: string
+          title: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          current?: boolean
+          description?: string | null
+          end_date?: string | null
+          freelancer_id: string
+          id?: string
+          start_date: string
+          title: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          current?: boolean
+          description?: string | null
+          end_date?: string | null
+          freelancer_id?: string
+          id?: string
+          start_date?: string
+          title?: string
+        }
+        Relationships: []
       }
       jobs: {
         Row: {
