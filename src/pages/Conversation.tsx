@@ -29,13 +29,13 @@ const Conversation: React.FC = () => {
 
     const fetchMessagesData = async () => {
       try {
-        // Get conversation participants
+        // Get conversation participants with explicit foreign key references
         const { data: conversation, error: convError } = await supabase
           .from('conversations')
           .select(`
             participant1_id, participant2_id,
-            profiles:participant1_id(name, profile_picture),
-            profiles2:participant2_id(name, profile_picture)
+            profiles1:profiles!conversations_participant1_id_fkey(name, profile_picture),
+            profiles2:profiles!conversations_participant2_id_fkey(name, profile_picture)
           `)
           .eq('id', conversationId)
           .single();
@@ -45,7 +45,7 @@ const Conversation: React.FC = () => {
         // Determine the other participant
         const isParticipant1 = conversation.participant1_id === user.id;
         const otherParticipantId = isParticipant1 ? conversation.participant2_id : conversation.participant1_id;
-        const otherParticipantData = isParticipant1 ? conversation.profiles2 : conversation.profiles;
+        const otherParticipantData = isParticipant1 ? conversation.profiles2 : conversation.profiles1;
         
         setReceiverId(otherParticipantId);
         if (otherParticipantData) {

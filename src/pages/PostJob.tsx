@@ -73,7 +73,7 @@ const PostJob: React.FC = () => {
       title: data.title,
       description: data.description,
       skills: data.skills,
-      budget: data.budget,
+      budget: Number(data.budget), // Ensure this is a number
       coverImage: data.coverImage,
     });
     
