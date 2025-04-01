@@ -12,6 +12,7 @@ import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import AuthCallback from "./pages/AuthCallback";
 import PostJob from "./pages/PostJob";
 import NotFound from "./pages/NotFound";
 import FreelancerDashboard from "./pages/freelancer/Dashboard";
@@ -28,6 +29,8 @@ import Contact from "./pages/Contact";
 import Notifications from "./pages/Notifications";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import RoleRoute from "./components/auth/RoleRoute";
+import Messages from "./pages/Messages";
+import Conversation from "./pages/Conversation";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,7 @@ const App = () => (
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/jobs" element={<Jobs />} />
@@ -55,8 +59,8 @@ const App = () => (
                   path="/dashboard" 
                   element={
                     <PrivateRoute>
-                      {(user) => 
-                        user.role === 'freelancer' 
+                      {(user, profile) => 
+                        profile.role === 'freelancer' 
                           ? <Navigate to="/freelancer/dashboard" replace /> 
                           : <Navigate to="/provider/dashboard" replace />
                       }
@@ -154,6 +158,22 @@ const App = () => (
                   element={
                     <PrivateRoute>
                       <Notifications />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/messages" 
+                  element={
+                    <PrivateRoute>
+                      <Messages />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/messages/:id" 
+                  element={
+                    <PrivateRoute>
+                      <Conversation />
                     </PrivateRoute>
                   } 
                 />

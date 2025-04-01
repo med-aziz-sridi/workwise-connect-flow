@@ -9,7 +9,289 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          cover_letter: string
+          created_at: string
+          freelancer_id: string
+          id: string
+          job_id: string
+          status: string | null
+        }
+        Insert: {
+          cover_letter: string
+          created_at?: string
+          freelancer_id: string
+          id?: string
+          job_id: string
+          status?: string | null
+        }
+        Update: {
+          cover_letter?: string
+          created_at?: string
+          freelancer_id?: string
+          id?: string
+          job_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_freelancer_id_fkey"
+            columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          id: string
+          job_id: string | null
+          last_message_at: string
+          participant1_id: string
+          participant2_id: string
+        }
+        Insert: {
+          id?: string
+          job_id?: string | null
+          last_message_at?: string
+          participant1_id: string
+          participant2_id: string
+        }
+        Update: {
+          id?: string
+          job_id?: string | null
+          last_message_at?: string
+          participant1_id?: string
+          participant2_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_participant1_id_fkey"
+            columns: ["participant1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_participant2_id_fkey"
+            columns: ["participant2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          budget: number
+          cover_image: string | null
+          created_at: string
+          description: string
+          id: string
+          provider_id: string
+          skills: string[] | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          budget: number
+          cover_image?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          provider_id: string
+          skills?: string[] | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          budget?: number
+          cover_image?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          provider_id?: string
+          skills?: string[] | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          related_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          related_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          related_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          cover_picture: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          profile_picture: string | null
+          role: string
+          skills: string[] | null
+        }
+        Insert: {
+          bio?: string | null
+          cover_picture?: string | null
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          profile_picture?: string | null
+          role: string
+          skills?: string[] | null
+        }
+        Update: {
+          bio?: string | null
+          cover_picture?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          profile_picture?: string | null
+          role?: string
+          skills?: string[] | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string
+          freelancer_id: string
+          id: string
+          images: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          freelancer_id: string
+          id?: string
+          images?: string[] | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          freelancer_id?: string
+          id?: string
+          images?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_freelancer_id_fkey"
+            columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

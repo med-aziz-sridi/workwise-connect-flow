@@ -1,20 +1,32 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Job, Application, Project, Notification, CreateJobInput } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { Job, Application, Project, Notification, CreateJobInput, Profile } from '@/types';
+import { toast as sonnerToast } from 'sonner';
 
 interface DataContextType {
   jobs: Job[];
   applications: Application[];
   projects: Project[];
   notifications: Notification[];
-  createJob: (job: CreateJobInput) => void;
-  applyToJob: (jobId: string, coverLetter: string) => void;
-  updateApplicationStatus: (applicationId: string, status: 'accepted' | 'rejected') => void;
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => void;
-  deleteProject: (projectId: string) => void;
-  markNotificationAsRead: (notificationId: string) => void;
+  isLoading: {
+    jobs: boolean;
+    applications: boolean;
+    projects: boolean;
+    notifications: boolean;
+  };
+  createJob: (job: CreateJobInput) => Promise<void>;
+  applyToJob: (jobId: string, coverLetter: string) => Promise<void>;
+  updateApplicationStatus: (applicationId: string, status: 'accepted' | 'rejected') => Promise<void>;
+  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
+  markNotificationAsRead: (notificationId: string) => Promise<void>;
+  refreshJobs: () => Promise<void>;
+  refreshApplications: () => Promise<void>;
+  refreshProjects: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -27,106 +39,260 @@ export function useData() {
   return context;
 }
 
-// Sample data - This will be replaced with Supabase data once integrated
-const SAMPLE_JOBS: Job[] = [
-  {
-    id: 'job1',
-    title: 'E-commerce Website Development',
-    description: 'We need a skilled developer to build a modern e-commerce website with product catalog, shopping cart, and payment integration.',
-    skills: ['React', 'Node.js', 'MongoDB', 'Payment API'],
-    budget: 2500,
-    providerId: '3',
-    providerName: 'Acme Corporation',
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'open',
-    coverImage: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600',
-  },
-  {
-    id: 'job2',
-    title: 'Mobile App UI Design',
-    description: 'Looking for a talented UI designer to create modern, intuitive interfaces for our iOS and Android food delivery app.',
-    skills: ['UI/UX', 'Mobile Design', 'Figma', 'iOS', 'Android'],
-    budget: 1800,
-    providerId: '3',
-    providerName: 'Acme Corporation',
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'open',
-    coverImage: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600',
-  },
-  {
-    id: 'job3',
-    title: 'WordPress Blog Customization',
-    description: 'We need help customizing our WordPress blog with a custom theme and some specific functionality.',
-    skills: ['WordPress', 'PHP', 'CSS', 'JavaScript'],
-    budget: 800,
-    providerId: '3',
-    providerName: 'Acme Corporation',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'open',
-    coverImage: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600',
-  },
-];
-
-const SAMPLE_PROJECTS: Project[] = [
-  {
-    id: 'project1',
-    title: 'Finance Dashboard App',
-    description: 'A comprehensive finance dashboard with data visualization, user authentication, and real-time updates.',
-    images: ['https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600', 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=600'],
-    freelancerId: '1',
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'project2',
-    title: 'E-commerce Mobile App',
-    description: 'Native mobile app for an e-commerce platform with features like product browsing, cart management, and secure checkout.',
-    images: ['https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600'],
-    freelancerId: '1',
-    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   
-  const [jobs, setJobs] = useState<Job[]>(SAMPLE_JOBS);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [projects, setProjects] = useState<Project[]>(SAMPLE_PROJECTS);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  
+  const [isLoading, setIsLoading] = useState({
+    jobs: false,
+    applications: false,
+    projects: false,
+    notifications: false,
+  });
 
-  // Load data from localStorage on component mount
-  useEffect(() => {
-    const storedJobs = localStorage.getItem('freeness_jobs');
-    const storedApplications = localStorage.getItem('freeness_applications');
-    const storedProjects = localStorage.getItem('freeness_projects');
-    const storedNotifications = localStorage.getItem('freeness_notifications');
+  // Fetch jobs from Supabase
+  const fetchJobs = async () => {
+    setIsLoading(prev => ({ ...prev, jobs: true }));
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          profiles:provider_id (name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const formattedJobs = data.map(job => ({
+        id: job.id,
+        title: job.title,
+        description: job.description,
+        skills: job.skills || [],
+        budget: job.budget,
+        providerId: job.provider_id,
+        providerName: job.profiles?.name || 'Unknown Provider',
+        createdAt: job.created_at,
+        status: job.status || 'open',
+        coverImage: job.cover_image,
+      }));
+      
+      setJobs(formattedJobs);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, jobs: false }));
+    }
+  };
+
+  // Fetch applications relevant to the user
+  const fetchApplications = async () => {
+    if (!user) return;
     
-    if (storedJobs) setJobs(JSON.parse(storedJobs));
-    if (storedApplications) setApplications(JSON.parse(storedApplications));
-    if (storedProjects) setProjects(JSON.parse(storedProjects));
-    if (storedNotifications) setNotifications(JSON.parse(storedNotifications));
-  }, []);
-  
-  // Save data to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('freeness_jobs', JSON.stringify(jobs));
-  }, [jobs]);
-  
-  useEffect(() => {
-    localStorage.setItem('freeness_applications', JSON.stringify(applications));
-  }, [applications]);
-  
-  useEffect(() => {
-    localStorage.setItem('freeness_projects', JSON.stringify(projects));
-  }, [projects]);
-  
-  useEffect(() => {
-    localStorage.setItem('freeness_notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    setIsLoading(prev => ({ ...prev, applications: true }));
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          jobs:job_id (
+            *,
+            profiles:provider_id (name)
+          ),
+          profiles:freelancer_id (name, profile_picture)
+        `);
+      
+      if (error) throw error;
+      
+      const formattedApplications = data.map(app => ({
+        id: app.id,
+        jobId: app.job_id,
+        freelancerId: app.freelancer_id,
+        coverLetter: app.cover_letter,
+        status: app.status || 'pending',
+        createdAt: app.created_at,
+        job: app.jobs ? {
+          id: app.jobs.id,
+          title: app.jobs.title,
+          providerId: app.jobs.provider_id,
+          providerName: app.jobs.profiles?.name || 'Unknown Provider',
+        } : undefined,
+        freelancer: app.profiles ? {
+          id: app.profiles.id,
+          name: app.profiles.name,
+          profilePicture: app.profiles.profile_picture,
+        } : undefined,
+      }));
+      
+      setApplications(formattedApplications);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, applications: false }));
+    }
+  };
 
-  const createJob = (jobData: CreateJobInput) => {
-    if (!user || user.role !== 'provider') {
+  // Fetch projects
+  const fetchProjects = async () => {
+    if (!user) return;
+    
+    setIsLoading(prev => ({ ...prev, projects: true }));
+    try {
+      const query = supabase
+        .from('projects')
+        .select('*');
+      
+      // If user is a freelancer, only fetch their projects
+      if (profile?.role === 'freelancer') {
+        query.eq('freelancer_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const formattedProjects = data.map(project => ({
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        images: project.images || [],
+        freelancerId: project.freelancer_id,
+        createdAt: project.created_at,
+      }));
+      
+      setProjects(formattedProjects);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, projects: false }));
+    }
+  };
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    if (!user) return;
+    
+    setIsLoading(prev => ({ ...prev, notifications: true }));
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const formattedNotifications = data.map(notification => ({
+        id: notification.id,
+        userId: notification.user_id,
+        message: notification.message,
+        read: notification.read,
+        createdAt: notification.created_at,
+        type: notification.type,
+        relatedId: notification.related_id,
+      }));
+      
+      setNotifications(formattedNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, notifications: false }));
+    }
+  };
+
+  // Initial data loading
+  useEffect(() => {
+    if (user) {
+      fetchJobs();
+      fetchApplications();
+      fetchProjects();
+      fetchNotifications();
+    } else {
+      // Load only public data when not authenticated
+      fetchJobs();
+      setApplications([]);
+      setProjects([]);
+      setNotifications([]);
+    }
+  }, [user]);
+
+  // Set up realtime subscriptions for updates
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscribe to relevant tables
+    const jobsChannel = supabase
+      .channel('jobs-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'jobs',
+      }, () => {
+        fetchJobs();
+      })
+      .subscribe();
+
+    const applicationsChannel = supabase
+      .channel('applications-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'applications',
+        filter: profile?.role === 'freelancer' 
+          ? `freelancer_id=eq.${user.id}` 
+          : `job_id=in.(select id from jobs where provider_id=eq.${user.id})`,
+      }, () => {
+        fetchApplications();
+      })
+      .subscribe();
+
+    const projectsChannel = supabase
+      .channel('projects-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'projects',
+        filter: profile?.role === 'freelancer' ? `freelancer_id=eq.${user.id}` : undefined,
+      }, () => {
+        fetchProjects();
+      })
+      .subscribe();
+
+    const notificationsChannel = supabase
+      .channel('notifications-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        fetchNotifications();
+        
+        // Show toast notification for new notifications
+        if (payload.eventType === 'INSERT') {
+          sonnerToast.info('New Notification', {
+            description: payload.new.message,
+          });
+        }
+      })
+      .subscribe();
+
+    // Cleanup function
+    return () => {
+      supabase.removeChannel(jobsChannel);
+      supabase.removeChannel(applicationsChannel);
+      supabase.removeChannel(projectsChannel);
+      supabase.removeChannel(notificationsChannel);
+    };
+  }, [user, profile]);
+
+  const createJob = async (jobData: CreateJobInput) => {
+    if (!user || profile?.role !== 'provider') {
       toast({
         title: "Permission denied",
         description: "Only job providers can create jobs",
@@ -135,25 +301,39 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    const newJob: Job = {
-      id: `job_${Date.now()}`,
-      ...jobData,
-      providerId: user.id,
-      providerName: user.name,
-      createdAt: new Date().toISOString(),
-      status: 'open',
-    };
-    
-    setJobs([newJob, ...jobs]);
-    
-    toast({
-      title: "Job created",
-      description: "Your job posting has been created successfully",
-    });
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .insert({
+          title: jobData.title,
+          description: jobData.description,
+          skills: jobData.skills,
+          budget: jobData.budget,
+          provider_id: user.id,
+          cover_image: jobData.coverImage,
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Job created",
+        description: "Your job posting has been created successfully",
+      });
+      
+      // Refresh jobs list
+      fetchJobs();
+    } catch (error) {
+      console.error('Error creating job:', error);
+      toast({
+        title: "Job creation failed",
+        description: "An error occurred while creating your job",
+        variant: "destructive",
+      });
+    }
   };
 
-  const applyToJob = (jobId: string, coverLetter: string) => {
-    if (!user || user.role !== 'freelancer') {
+  const applyToJob = async (jobId: string, coverLetter: string) => {
+    if (!user || profile?.role !== 'freelancer') {
       toast({
         title: "Permission denied",
         description: "Only freelancers can apply to jobs",
@@ -162,51 +342,78 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    // Check if already applied
-    if (applications.some(app => app.jobId === jobId && app.freelancerId === user.id)) {
+    try {
+      // Check if already applied
+      const { data: existingApplications, error: checkError } = await supabase
+        .from('applications')
+        .select('id')
+        .eq('job_id', jobId)
+        .eq('freelancer_id', user.id);
+      
+      if (checkError) throw checkError;
+      
+      if (existingApplications.length > 0) {
+        toast({
+          title: "Already applied",
+          description: "You have already applied to this job",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Get job details for notification
+      const { data: jobData, error: jobError } = await supabase
+        .from('jobs')
+        .select('title, provider_id')
+        .eq('id', jobId)
+        .single();
+      
+      if (jobError) throw jobError;
+      
+      // Submit application
+      const { data: application, error: applicationError } = await supabase
+        .from('applications')
+        .insert({
+          job_id: jobId,
+          freelancer_id: user.id,
+          cover_letter: coverLetter,
+        })
+        .select()
+        .single();
+      
+      if (applicationError) throw applicationError;
+      
+      // Create notification for job provider
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: jobData.provider_id,
+          message: `${profile.name} has applied to your job: ${jobData.title}`,
+          type: 'application',
+          related_id: application.id,
+        });
+      
+      if (notificationError) throw notificationError;
+      
       toast({
-        title: "Already applied",
-        description: "You have already applied to this job",
+        title: "Application submitted",
+        description: "Your job application has been submitted successfully",
+      });
+      
+      // Refresh applications list
+      fetchApplications();
+    } catch (error) {
+      console.error('Error applying to job:', error);
+      toast({
+        title: "Application failed",
+        description: "An error occurred while submitting your application",
         variant: "destructive",
       });
-      return;
     }
-    
-    const newApplication: Application = {
-      id: `app_${Date.now()}`,
-      jobId,
-      freelancerId: user.id,
-      coverLetter,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    
-    setApplications([newApplication, ...applications]);
-    
-    // Find job provider to create notification
-    const job = jobs.find(j => j.id === jobId);
-    if (job) {
-      const newNotification: Notification = {
-        id: `notification_${Date.now()}`,
-        userId: job.providerId,
-        message: `${user.name} has applied to your job: ${job.title}`,
-        read: false,
-        createdAt: new Date().toISOString(),
-        type: 'application',
-        relatedId: newApplication.id,
-      };
-      
-      setNotifications([newNotification, ...notifications]);
-    }
-    
-    toast({
-      title: "Application submitted",
-      description: "Your job application has been submitted successfully",
-    });
   };
 
-  const updateApplicationStatus = (applicationId: string, status: 'accepted' | 'rejected') => {
-    if (!user || user.role !== 'provider') {
+  const updateApplicationStatus = async (applicationId: string, status: 'accepted' | 'rejected') => {
+    if (!user || profile?.role !== 'provider') {
       toast({
         title: "Permission denied",
         description: "Only job providers can update application status",
@@ -215,53 +422,68 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    const application = applications.find(a => a.id === applicationId);
-    if (!application) {
+    try {
+      // Get application details
+      const { data: applicationData, error: applicationError } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          jobs:job_id (title, provider_id)
+        `)
+        .eq('id', applicationId)
+        .single();
+      
+      if (applicationError) throw applicationError;
+      
+      // Verify ownership
+      if (applicationData.jobs.provider_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You can only manage applications for your own jobs",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update application status
+      const { error: updateError } = await supabase
+        .from('applications')
+        .update({ status })
+        .eq('id', applicationId);
+      
+      if (updateError) throw updateError;
+      
+      // Create notification for the freelancer
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: applicationData.freelancer_id,
+          message: `Your application for "${applicationData.jobs.title}" has been ${status}`,
+          type: 'application',
+          related_id: applicationId,
+        });
+      
+      if (notificationError) throw notificationError;
+      
       toast({
-        title: "Application not found",
-        description: "The requested application does not exist",
+        title: "Application updated",
+        description: `Application has been ${status}`,
+      });
+      
+      // Refresh applications list
+      fetchApplications();
+    } catch (error) {
+      console.error('Error updating application status:', error);
+      toast({
+        title: "Update failed",
+        description: "An error occurred while updating the application",
         variant: "destructive",
       });
-      return;
     }
-    
-    const job = jobs.find(j => j.id === application.jobId);
-    if (!job || job.providerId !== user.id) {
-      toast({
-        title: "Permission denied",
-        description: "You can only manage applications for your own jobs",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const updatedApplications = applications.map(a => 
-      a.id === applicationId ? { ...a, status } : a
-    );
-    
-    setApplications(updatedApplications);
-    
-    // Create notification for the freelancer
-    const newNotification: Notification = {
-      id: `notification_${Date.now()}`,
-      userId: application.freelancerId,
-      message: `Your application for "${job.title}" has been ${status}`,
-      read: false,
-      createdAt: new Date().toISOString(),
-      type: 'application',
-      relatedId: application.id,
-    };
-    
-    setNotifications([newNotification, ...notifications]);
-    
-    toast({
-      title: "Application updated",
-      description: `Application has been ${status}`,
-    });
   };
 
-  const addProject = (projectData: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => {
-    if (!user || user.role !== 'freelancer') {
+  const addProject = async (projectData: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => {
+    if (!user || profile?.role !== 'freelancer') {
       toast({
         title: "Permission denied",
         description: "Only freelancers can add projects",
@@ -270,23 +492,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    const newProject: Project = {
-      id: `project_${Date.now()}`,
-      ...projectData,
-      freelancerId: user.id,
-      createdAt: new Date().toISOString(),
-    };
-    
-    setProjects([newProject, ...projects]);
-    
-    toast({
-      title: "Project added",
-      description: "Your project has been added to your portfolio",
-    });
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .insert({
+          title: projectData.title,
+          description: projectData.description,
+          images: projectData.images,
+          freelancer_id: user.id,
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Project added",
+        description: "Your project has been added to your portfolio",
+      });
+      
+      // Refresh projects list
+      fetchProjects();
+    } catch (error) {
+      console.error('Error adding project:', error);
+      toast({
+        title: "Project addition failed",
+        description: "An error occurred while adding your project",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteProject = (projectId: string) => {
-    if (!user || user.role !== 'freelancer') {
+  const deleteProject = async (projectId: string) => {
+    if (!user || profile?.role !== 'freelancer') {
       toast({
         title: "Permission denied",
         description: "Only freelancers can delete projects",
@@ -295,46 +531,80 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    const project = projects.find(p => p.id === projectId);
-    if (!project) {
+    try {
+      // Verify ownership
+      const { data: projectData, error: checkError } = await supabase
+        .from('projects')
+        .select('freelancer_id')
+        .eq('id', projectId)
+        .single();
+      
+      if (checkError) throw checkError;
+      
+      if (projectData.freelancer_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You can only delete your own projects",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Delete project
+      const { error: deleteError } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+      
+      if (deleteError) throw deleteError;
+      
       toast({
-        title: "Project not found",
-        description: "The requested project does not exist",
+        title: "Project deleted",
+        description: "Your project has been removed from your portfolio",
+      });
+      
+      // Refresh projects list
+      fetchProjects();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: "Project deletion failed",
+        description: "An error occurred while deleting your project",
         variant: "destructive",
       });
-      return;
     }
-    
-    if (project.freelancerId !== user.id) {
-      toast({
-        title: "Permission denied",
-        description: "You can only delete your own projects",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const updatedProjects = projects.filter(p => p.id !== projectId);
-    setProjects(updatedProjects);
-    
-    toast({
-      title: "Project deleted",
-      description: "Your project has been removed from your portfolio",
-    });
   };
 
-  const markNotificationAsRead = (notificationId: string) => {
+  const markNotificationAsRead = async (notificationId: string) => {
     if (!user) return;
     
-    const notification = notifications.find(n => n.id === notificationId);
-    if (!notification || notification.userId !== user.id) return;
-    
-    const updatedNotifications = notifications.map(n => 
-      n.id === notificationId ? { ...n, read: true } : n
-    );
-    
-    setNotifications(updatedNotifications);
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true } 
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
+
+  // Functions to manually refresh data
+  const refreshJobs = fetchJobs;
+  const refreshApplications = fetchApplications;
+  const refreshProjects = fetchProjects;
+  const refreshNotifications = fetchNotifications;
 
   return (
     <DataContext.Provider 
@@ -343,12 +613,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         applications, 
         projects, 
         notifications,
+        isLoading,
         createJob,
         applyToJob,
         updateApplicationStatus,
         addProject,
         deleteProject,
         markNotificationAsRead,
+        refreshJobs,
+        refreshApplications,
+        refreshProjects,
+        refreshNotifications,
       }}
     >
       {children}

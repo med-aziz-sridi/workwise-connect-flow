@@ -1,33 +1,33 @@
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
+import { Loader2 } from 'lucide-react';
 
 interface RoleRouteProps {
-  children: React.ReactNode;
   role: UserRole;
+  children: React.ReactNode;
 }
 
-const RoleRoute: React.FC<RoleRouteProps> = ({ children, role }) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
+const RoleRoute: React.FC<RoleRouteProps> = ({ role, children }) => {
+  const { user, profile, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[70vh]">
-        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-4" />
+        <h2 className="text-xl font-semibold">Loading...</h2>
       </div>
     );
   }
 
-  if (!user) {
-    // Save the location they were trying to go to
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!user || !profile) {
+    return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== role) {
-    return <Navigate to={user.role === 'freelancer' ? '/freelancer/dashboard' : '/provider/dashboard'} replace />;
+  if (profile.role !== role) {
+    return <Navigate to={profile.role === 'freelancer' ? '/freelancer/dashboard' : '/provider/dashboard'} replace />;
   }
 
   return <>{children}</>;

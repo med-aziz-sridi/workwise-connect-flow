@@ -1,17 +1,30 @@
 
 export type UserRole = 'freelancer' | 'provider';
 
+// Session user information
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   profilePicture?: string;
-  coverPicture?: string;
   bio?: string;
   skills?: string[];
   createdAt: string;
-  chats?: string[]; // IDs of chats the user is participating in
+  coverPicture?: string;
+}
+
+// Database profile from Supabase
+export interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  profile_picture?: string;
+  cover_picture?: string;
+  bio?: string;
+  skills?: string[];
+  created_at: string;
 }
 
 export interface Job {
@@ -27,6 +40,27 @@ export interface Job {
   coverImage?: string;
 }
 
+export interface CreateJobInput {
+  title: string;
+  description: string;
+  skills: string[];
+  budget: number;
+  coverImage?: string;
+}
+
+export interface FreelancerInfo {
+  id: string;
+  name: string;
+  profilePicture?: string;
+}
+
+export interface JobInfo {
+  id: string;
+  title: string;
+  providerId: string;
+  providerName: string;
+}
+
 export interface Application {
   id: string;
   jobId: string;
@@ -34,6 +68,8 @@ export interface Application {
   coverLetter: string;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
+  job?: JobInfo;
+  freelancer?: FreelancerInfo;
 }
 
 export interface Project {
@@ -51,32 +87,29 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
-  type: 'application' | 'job' | 'message';
-  relatedId: string;
+  type: 'application' | 'message' | 'system';
+  relatedId?: string;
 }
 
 export interface Message {
   id: string;
-  chatId: string;
   senderId: string;
+  receiverId: string;
   content: string;
-  createdAt: string;
   read: boolean;
-}
-
-export interface Chat {
-  id: string;
-  participants: string[]; // User IDs
-  jobId?: string; // Optional link to a job
-  lastMessageAt: string;
   createdAt: string;
 }
 
-// Update DataContext with coverImage
-export interface CreateJobInput {
-  title: string;
-  description: string;
-  skills: string[];
-  budget: number;
-  coverImage?: string;
+export interface Conversation {
+  id: string;
+  participant1Id: string;
+  participant2Id: string;
+  lastMessageAt: string;
+  jobId?: string;
+  lastMessage?: string;
+  otherUser?: {
+    id: string;
+    name: string;
+    profilePicture?: string;
+  };
 }

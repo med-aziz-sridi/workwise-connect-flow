@@ -1,31 +1,35 @@
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { User } from '@/types';
+import { Loader2 } from 'lucide-react';
+import { User, Profile } from '@/types';
 
 interface PrivateRouteProps {
-  children: React.ReactNode | ((user: User) => React.ReactNode);
+  children: React.ReactNode | ((user: User, profile: Profile) => React.ReactNode);
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
+  const { user, profile, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[70vh]">
-        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-4" />
+        <h2 className="text-xl font-semibold">Loading...</h2>
       </div>
     );
   }
 
-  if (!user) {
-    // Save the location they were trying to go to
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!user || !profile) {
+    return <Navigate to="/login" replace />;
   }
 
-  return typeof children === 'function' ? children(user) : <>{children}</>;
+  if (typeof children === 'function') {
+    return <>{children(user, profile)}</>;
+  }
+
+  return <>{children}</>;
 };
 
 export default PrivateRoute;
