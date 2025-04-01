@@ -27,10 +27,11 @@ const Navbar: React.FC = () => {
   ).length;
 
   const getInitials = (name?: string) => {
-    if (!name) return "";
+    if (!name || typeof name !== "string") return ""; 
     return name
+      .trim() 
       .split(" ")
-      .map((n) => n[0])
+      .map((n) => n[0] || "") 
       .join("")
       .toUpperCase();
   };
