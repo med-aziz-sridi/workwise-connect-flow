@@ -74,13 +74,30 @@ const ExperienceCertifications: React.FC = () => {
   if (!profile) return null;
 
   const onExperienceSubmit = (values: z.infer<typeof experienceSchema>) => {
-    addExperience(values);
+    // Ensure all required fields are present before submitting
+    const experienceData: Omit<Experience, "id" | "freelancerId"> = {
+      title: values.title,
+      company: values.company,
+      description: values.description || null,
+      startDate: values.startDate,
+      endDate: values.current ? undefined : values.endDate,
+      current: values.current,
+    };
+    addExperience(experienceData);
     setIsAddingExperience(false);
     experienceForm.reset();
   };
 
   const onCertificationSubmit = (values: z.infer<typeof certificationSchema>) => {
-    addCertification(values);
+    // Ensure all required fields are present before submitting
+    const certificationData: Omit<Certification, "id" | "freelancerId"> = {
+      name: values.name,
+      issuer: values.issuer,
+      issueDate: values.issueDate,
+      expiryDate: values.expiryDate,
+      credentialUrl: values.credentialUrl || null,
+    };
+    addCertification(certificationData);
     setIsAddingCertification(false);
     certificationForm.reset();
   };

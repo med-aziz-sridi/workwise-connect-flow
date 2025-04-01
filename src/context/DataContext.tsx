@@ -1,8 +1,9 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Job, Application, Project, Notification, CreateJobInput, Profile, Experience, Certification } from '@/types';
+import { Job, Application, Project, Notification, CreateJobInput, Profile, Experience, Certification, JobStatus, ApplicationStatus, NotificationType } from '@/types';
 import { toast as sonnerToast } from 'sonner';
 
 interface DataContextType {
@@ -81,7 +82,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      const formattedJobs = data.map(job => ({
+      const formattedJobs: Job[] = data.map(job => ({
         id: job.id,
         title: job.title,
         description: job.description,
@@ -90,7 +91,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         providerId: job.provider_id,
         providerName: job.profiles?.name || 'Unknown Provider',
         createdAt: job.created_at,
-        status: job.status || 'open',
+        status: (job.status as JobStatus) || 'open',
         coverImage: job.cover_image,
       }));
       
@@ -115,17 +116,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             *,
             profiles:provider_id (name)
           ),
-          profiles:freelancer_id (name, profile_picture)
+          profiles:freelancer_id (id, name, profile_picture)
         `);
       
       if (error) throw error;
       
-      const formattedApplications = data.map(app => ({
+      const formattedApplications: Application[] = data.map(app => ({
         id: app.id,
         jobId: app.job_id,
         freelancerId: app.freelancer_id,
         coverLetter: app.cover_letter,
-        status: app.status || 'pending',
+        status: (app.status as ApplicationStatus) || 'pending',
         createdAt: app.created_at,
         job: app.jobs ? {
           id: app.jobs.id,
@@ -195,13 +196,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      const formattedNotifications = data.map(notification => ({
+      const formattedNotifications: Notification[] = data.map(notification => ({
         id: notification.id,
         userId: notification.user_id,
         message: notification.message,
         read: notification.read,
         createdAt: notification.created_at,
-        type: notification.type,
+        type: notification.type as NotificationType,
         relatedId: notification.related_id,
       }));
       
@@ -218,30 +219,43 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setIsLoading(prev => ({ ...prev, experiences: true }));
     try {
-      const query = supabase
+      const { data, error } = await supabase
         .from('experiences')
         .select('*');
       
-      if (profile?.role === 'freelancer') {
-        query.eq('freelancer_id', user.id);
-      }
-      
-      const { data, error } = await query.order('start_date', { ascending: false });
-      
       if (error) throw error;
       
-      const formattedExperiences = data.map(exp => ({
-        id: exp.id,
-        title: exp.title,
-        company: exp.company,
-        description: exp.description,
-        startDate: exp.start_date,
-        endDate: exp.end_date,
-        current: exp.current,
-        freelancerId: exp.freelancer_id,
-      }));
-      
-      setExperiences(formattedExperiences);
+      if (profile?.role === 'freelancer') {
+        // Filter on client side if needed
+        const filteredData = data.filter(exp => exp.freelancer_id === user.id);
+        
+        const formattedExperiences: Experience[] = filteredData.map(exp => ({
+          id: exp.id,
+          title: exp.title,
+          company: exp.company,
+          description: exp.description,
+          startDate: exp.start_date,
+          endDate: exp.end_date,
+          current: exp.current,
+          freelancerId: exp.freelancer_id,
+        }));
+        
+        setExperiences(formattedExperiences);
+      } else {
+        // For providers or other roles
+        const formattedExperiences: Experience[] = data.map(exp => ({
+          id: exp.id,
+          title: exp.title,
+          company: exp.company,
+          description: exp.description,
+          startDate: exp.start_date,
+          endDate: exp.end_date,
+          current: exp.current,
+          freelancerId: exp.freelancer_id,
+        }));
+        
+        setExperiences(formattedExperiences);
+      }
     } catch (error) {
       console.error('Error fetching experiences:', error);
     } finally {
@@ -254,29 +268,41 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setIsLoading(prev => ({ ...prev, certifications: true }));
     try {
-      const query = supabase
+      const { data, error } = await supabase
         .from('certifications')
         .select('*');
       
-      if (profile?.role === 'freelancer') {
-        query.eq('freelancer_id', user.id);
-      }
-      
-      const { data, error } = await query.order('issue_date', { ascending: false });
-      
       if (error) throw error;
       
-      const formattedCertifications = data.map(cert => ({
-        id: cert.id,
-        name: cert.name,
-        issuer: cert.issuer,
-        issueDate: cert.issue_date,
-        expiryDate: cert.expiry_date,
-        credentialUrl: cert.credential_url,
-        freelancerId: cert.freelancer_id,
-      }));
-      
-      setCertifications(formattedCertifications);
+      if (profile?.role === 'freelancer') {
+        // Filter on client side if needed
+        const filteredData = data.filter(cert => cert.freelancer_id === user.id);
+        
+        const formattedCertifications: Certification[] = filteredData.map(cert => ({
+          id: cert.id,
+          name: cert.name,
+          issuer: cert.issuer,
+          issueDate: cert.issue_date,
+          expiryDate: cert.expiry_date,
+          credentialUrl: cert.credential_url,
+          freelancerId: cert.freelancer_id,
+        }));
+        
+        setCertifications(formattedCertifications);
+      } else {
+        // For providers or other roles
+        const formattedCertifications: Certification[] = data.map(cert => ({
+          id: cert.id,
+          name: cert.name,
+          issuer: cert.issuer,
+          issueDate: cert.issue_date,
+          expiryDate: cert.expiry_date,
+          credentialUrl: cert.credential_url,
+          freelancerId: cert.freelancer_id,
+        }));
+        
+        setCertifications(formattedCertifications);
+      }
     } catch (error) {
       console.error('Error fetching certifications:', error);
     } finally {
