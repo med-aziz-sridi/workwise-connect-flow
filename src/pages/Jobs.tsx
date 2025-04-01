@@ -4,10 +4,11 @@ import { useData } from '@/context/DataContext';
 import JobCard from '@/components/jobs/JobCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, ArrowLeft, Home } from 'lucide-react';
 import { Job } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ALL_SKILLS = [
   'React', 'Node.js', 'TypeScript', 'MongoDB', 'UI/UX', 'Figma', 'Adobe XD', 
@@ -19,6 +20,7 @@ const Jobs: React.FC = () => {
   const { jobs } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const navigate = useNavigate();
   
   const toggleSkill = (skill: string) => {
     if (selectedSkills.includes(skill)) {
@@ -42,9 +44,24 @@ const Jobs: React.FC = () => {
     
     return matchesSearch && matchesSkills;
   });
+
+  const handleBackClick = () => {
+    navigate(-1);
+  };
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex items-center gap-2 mb-6">
+        <Button variant="ghost" size="sm" onClick={handleBackClick} className="text-gray-600">
+          <ArrowLeft className="h-4 w-4 mr-1" /> Back
+        </Button>
+        <Button variant="ghost" size="sm" asChild className="text-gray-600">
+          <Link to="/" className="flex items-center">
+            <Home className="h-4 w-4 mr-1" /> Home
+          </Link>
+        </Button>
+      </div>
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Jobs</h1>
         <p className="text-lg text-gray-600">Browse and apply to the latest freelance opportunities</p>
@@ -78,7 +95,7 @@ const Jobs: React.FC = () => {
                       <Badge
                         key={skill}
                         variant={selectedSkills.includes(skill) ? "default" : "outline"}
-                        className={`cursor-pointer ${
+                        className={`cursor-pointer transition-colors ${
                           selectedSkills.includes(skill) 
                             ? "bg-blue-500 hover:bg-blue-600" 
                             : "hover:bg-blue-50"
