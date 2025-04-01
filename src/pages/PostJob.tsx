@@ -32,7 +32,7 @@ const jobSchema = z.object({
   budget: z
     .string()
     .regex(/^\d+$/, { message: 'Budget must be a number' })
-    .transform(val => parseInt(val, 10)),
+    .transform(Number), // Change this to transform to Number directly
   skills: z
     .array(z.string())
     .min(1, { message: 'Select at least one skill' }),
@@ -73,7 +73,7 @@ const PostJob: React.FC = () => {
       title: data.title,
       description: data.description,
       skills: data.skills,
-      budget: Number(data.budget), // Explicitly convert to number to ensure type safety
+      budget: data.budget, // Now this is already a number from our schema transform
       coverImage: data.coverImage,
     });
     
