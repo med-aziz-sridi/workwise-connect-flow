@@ -26,13 +26,15 @@ const Navbar: React.FC = () => {
     n => n.userId === user?.id && !n.read
   ).length;
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return "";
     return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
       .toUpperCase();
   };
+  
 
   const closeMenu = () => setIsMenuOpen(false);
 
