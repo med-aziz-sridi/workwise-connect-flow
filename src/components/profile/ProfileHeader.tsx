@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Pencil, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AvailabilityBadge } from '@/components/ui/availability-badge';
 
 const ProfileHeader: React.FC = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -122,24 +124,35 @@ const ProfileHeader: React.FC = () => {
       </div>
       
       {/* Profile Picture */}
-      <div className="absolute -bottom-16 left-6">
-        <div className="relative">
-          <Avatar className="h-32 w-32 border-4 border-white shadow-md">
-            <AvatarImage src={profile.profile_picture || undefined} alt={profile.name} />
-            <AvatarFallback className="text-3xl">{getInitials(profile.name)}</AvatarFallback>
-          </Avatar>
-          
-          <Button 
-            variant="secondary" 
-            size="sm"
-            className="absolute bottom-0 right-0"
-            onClick={() => setIsEditingAvatar(!isEditingAvatar)}
-          >
-            <Pencil className="h-3 w-3" />
-          </Button>
+      <div className="absolute left-1/2 transform -translate-x-1/2 -bottom-16">
+        <div className="relative flex flex-col items-center">
+          <div className="relative">
+            <Avatar className="h-32 w-32 border-4 border-white shadow-lg ring-4 ring-white/10">
+              <AvatarImage 
+                src={profile.profile_picture || undefined} 
+                alt={profile.name} 
+                className="object-cover"
+              />
+              <AvatarFallback className="text-3xl bg-blue-100 text-blue-600">{getInitials(profile.name)}</AvatarFallback>
+            </Avatar>
+            
+            <div className="absolute -bottom-2 -right-2 flex space-x-1 bg-white rounded-full p-1 shadow-md">
+              {profile.verified && <VerificationBadge size="sm" />}
+              {profile.role === 'freelancer' && <AvailabilityBadge size="sm" />}
+            </div>
+            
+            <Button 
+              variant="secondary" 
+              size="icon"
+              className="absolute top-0 right-0 h-8 w-8 shadow-md"
+              onClick={() => setIsEditingAvatar(!isEditingAvatar)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           
           {isEditingAvatar && (
-            <div className="absolute top-full mt-2 left-0 bg-white p-3 rounded-lg shadow-lg z-10 w-64">
+            <div className="absolute top-full mt-4 bg-white p-3 rounded-lg shadow-lg z-10 w-64">
               <h3 className="font-medium mb-2">Update Profile Picture</h3>
               <Input 
                 type="file" 
@@ -163,7 +176,7 @@ const ProfileHeader: React.FC = () => {
       </div>
       
       {/* Spacer for profile picture overflow */}
-      <div className="h-20"></div>
+      <div className="h-24"></div>
     </div>
   );
 };

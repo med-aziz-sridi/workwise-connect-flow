@@ -26,7 +26,11 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div className={cn('inline-flex text-blue-500', className)}>
-            <BadgeCheck className={cn(sizeClasses[size], 'text-blue-500')} />
+            <BadgeCheck className={cn(
+              sizeClasses[size], 
+              'text-blue-500 drop-shadow-sm',
+              size === 'lg' && 'animate-pulse'
+            )} />
           </div>
         </TooltipTrigger>
         <TooltipContent>

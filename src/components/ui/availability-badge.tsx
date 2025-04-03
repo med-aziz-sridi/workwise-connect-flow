@@ -22,6 +22,7 @@ export const AvailabilityBadge: React.FC<AvailabilityBadgeProps> = ({
   const { user, profile } = useAuth();
   const [isAvailable, setIsAvailable] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [justUpdated, setJustUpdated] = useState(false);
 
   const sizeClasses = {
     sm: 'h-3.5 w-3.5',
@@ -82,6 +83,13 @@ export const AvailabilityBadge: React.FC<AvailabilityBadgeProps> = ({
       }
 
       setIsAvailable(true);
+      setJustUpdated(true);
+      
+      // Animation effect to show the update was successful
+      setTimeout(() => {
+        setJustUpdated(false);
+      }, 2000);
+      
       toast.success('You are now marked as available for the next 24 hours');
     } catch (error) {
       console.error('Error:', error);
@@ -97,7 +105,12 @@ export const AvailabilityBadge: React.FC<AvailabilityBadgeProps> = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={cn('inline-flex', isAvailable ? 'text-green-500' : 'text-gray-400', className)}>
+            <div className={cn(
+              'inline-flex', 
+              isAvailable ? 'text-green-500' : 'text-gray-400', 
+              justUpdated ? 'animate-pulse' : '',
+              className
+            )}>
               <Clock className={cn(sizeClasses[size], isAvailable ? 'text-green-500' : 'text-gray-400')} />
             </div>
           </TooltipTrigger>
@@ -112,9 +125,11 @@ export const AvailabilityBadge: React.FC<AvailabilityBadgeProps> = ({
       {showButton && (
         <Button 
           variant="outline" 
-          size="sm" 
-          className={cn("h-6 px-2 text-xs", 
-            isAvailable ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-50"
+          size={size === 'lg' ? 'default' : 'sm'} 
+          className={cn(
+            size === 'sm' ? "h-6 px-2 text-xs" : "", 
+            isAvailable ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-50",
+            justUpdated ? "animate-pulse" : ""
           )}
           onClick={setAvailability}
           disabled={isAvailable}
