@@ -6,9 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pencil, Plus, X, Check, UserCircle, Search } from 'lucide-react';
+import { Pencil, Plus, X, Check, UserCircle, Search, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { VerificationBadge } from '@/components/ui/verification-badge';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 
 const COMMON_SKILLS = [
   'React', 'Node.js', 'TypeScript', 'MongoDB', 'UI/UX', 'Figma', 'Adobe XD', 
@@ -29,6 +39,7 @@ const ProfileDetails: React.FC = () => {
   const [skillSearchTerm, setSkillSearchTerm] = useState('');
   const skillSearchRef = useRef<HTMLDivElement>(null);
   const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -96,6 +107,12 @@ const ProfileDetails: React.FC = () => {
     }
   };
 
+  const handleVerificationRequest = () => {
+    // This would typically send a request to the backend
+    toast.success("Verification request submitted! We'll review your profile shortly.");
+    setVerificationDialogOpen(false);
+  };
+
   const getInitials = (name?: string) => {
     if (!name || typeof name !== "string" || name.trim().length === 0) return "U";
     return name
@@ -130,11 +147,52 @@ const ProfileDetails: React.FC = () => {
                   className="font-bold text-xl mb-1"
                 />
               ) : (
-                <h2 className="text-2xl font-bold">{profile.name}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold">{profile.name}</h2>
+                  {profile.verified && <VerificationBadge className="ml-1" />}
+                </div>
               )}
-              <Badge variant="outline" className="capitalize mt-1">
-                {profile.role}
-              </Badge>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="capitalize">
+                  {profile.role}
+                </Badge>
+                {!profile.verified && (
+                  <Dialog open={verificationDialogOpen} onOpenChange={setVerificationDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
+                        <ShieldCheck className="h-3 w-3 mr-1" />
+                        Get Verified
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Request Verification</DialogTitle>
+                        <DialogDescription>
+                          Getting verified helps build trust with clients and increases your chances of landing jobs.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <h4 className="font-medium">Verification Requirements:</h4>
+                          <ul className="list-disc pl-5 space-y-1 text-sm">
+                            <li>Valid government-issued ID</li>
+                            <li>Professional portfolio or work samples</li>
+                            <li>Proof of qualifications (if applicable)</li>
+                            <li>Minimum of 3 completed projects or jobs (for freelancers)</li>
+                          </ul>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Our team will review your profile and documents within 2-3 business days.
+                        </p>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setVerificationDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleVerificationRequest}>Submit Request</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
             </div>
           </div>
           

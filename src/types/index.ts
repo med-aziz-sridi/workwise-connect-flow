@@ -1,4 +1,3 @@
-
 export type UserRole = 'freelancer' | 'provider';
 
 // Session user information
@@ -12,6 +11,7 @@ export interface User {
   skills?: string[];
   createdAt: string;
   coverPicture?: string;
+  verified?: boolean;
 }
 
 // Database profile from Supabase
@@ -25,6 +25,7 @@ export interface Profile {
   bio?: string;
   skills?: string[];
   created_at: string;
+  verified?: boolean;
 }
 
 export type JobStatus = 'open' | 'closed' | 'completed';
@@ -137,4 +138,13 @@ export interface Certification {
   expiryDate?: string;
   credentialUrl?: string;
   freelancerId: string;
+}
+
+// New interface for verification requests
+export interface VerificationRequest {
+  id: string;
+  userId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  documents?: string[];
 }

@@ -5,6 +5,7 @@ import { Bell, Briefcase, LogOut, MessageSquare, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { VerificationBadge } from '@/components/ui/verification-badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,10 +41,18 @@ const UserMenu: React.FC = () => {
             <AvatarImage src={profile.profile_picture} alt={profile.name} />
             <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
           </Avatar>
+          {profile.verified && (
+            <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5">
+              <VerificationBadge size="sm" />
+            </div>
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel className="flex items-center gap-2">
+          <span>My Account</span>
+          {profile.verified && <VerificationBadge size="sm" />}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer w-full flex items-center">
