@@ -292,6 +292,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          available_until: string | null
           bio: string | null
           cover_picture: string | null
           created_at: string
@@ -301,8 +302,10 @@ export type Database = {
           profile_picture: string | null
           role: string
           skills: string[] | null
+          verified: boolean | null
         }
         Insert: {
+          available_until?: string | null
           bio?: string | null
           cover_picture?: string | null
           created_at?: string
@@ -312,8 +315,10 @@ export type Database = {
           profile_picture?: string | null
           role: string
           skills?: string[] | null
+          verified?: boolean | null
         }
         Update: {
+          available_until?: string | null
           bio?: string | null
           cover_picture?: string | null
           created_at?: string
@@ -323,6 +328,7 @@ export type Database = {
           profile_picture?: string | null
           role?: string
           skills?: string[] | null
+          verified?: boolean | null
         }
         Relationships: []
       }
@@ -355,6 +361,41 @@ export type Database = {
           {
             foreignKeyName: "projects_freelancer_id_fkey"
             columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verification_requests: {
+        Row: {
+          created_at: string
+          documents: string[] | null
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          documents?: string[] | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          documents?: string[] | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
