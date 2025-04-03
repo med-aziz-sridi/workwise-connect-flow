@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line, Legend, AreaChart, Area } from 'recharts';
 import { formatDistanceToNow } from 'date-fns';
-import { Plus, Users, Briefcase, Clock, DollarSign } from 'lucide-react';
+import { Plus, Users, Briefcase, Clock, DollarSign, TrendingUp, Activity } from 'lucide-react';
 
 const ProviderDashboard = () => {
   const { user } = useAuth();
@@ -42,6 +43,21 @@ const ProviderDashboard = () => {
     name: job.title.length > 20 ? job.title.substring(0, 20) + '...' : job.title,
     applications: myApplications.filter(app => app.jobId === job.id).length,
   }));
+  
+  // Budget and spending data (simulated for demonstration)
+  const totalBudget = myJobs.reduce((total, job) => total + job.budget, 0);
+  const spentBudget = totalBudget * 0.65; // Simulated spending (65% of total budget)
+  const remainingBudget = totalBudget - spentBudget;
+  
+  // Monthly spending/budget data (simulated)
+  const budgetData = [
+    { month: 'Jan', budget: 9000, spent: 7500 },
+    { month: 'Feb', budget: 10000, spent: 8200 },
+    { month: 'Mar', budget: 12000, spent: 9800 },
+    { month: 'Apr', budget: 11000, spent: 8500 },
+    { month: 'May', budget: 13000, spent: 10200 },
+    { month: 'Jun', budget: 14000, spent: 9800 },
+  ];
   
   // Recent applications
   const recentApplications = myApplications
@@ -109,64 +125,31 @@ const ProviderDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Pending Applications</p>
-                <h3 className="text-3xl font-bold text-gray-900 mt-1">{pendingApplications}</h3>
+                <p className="text-sm font-medium text-gray-500">Total Budget</p>
+                <h3 className="text-3xl font-bold text-gray-900 mt-1">${totalBudget.toLocaleString()}</h3>
               </div>
-              <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
-                <Clock className="h-6 w-6 text-orange-600" />
+              <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
             </div>
             <div className="mt-4">
-              <Button asChild variant="outline" size="sm" className="w-full">
-                <Link to="/my-jobs">Review Applications</Link>
-              </Button>
+              <div className="bg-gray-100 h-2 rounded-full">
+                <div 
+                  className="bg-green-500 h-2 rounded-full" 
+                  style={{ width: `${(spentBudget / totalBudget) * 100}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-xs mt-1 text-gray-500">
+                <span>Spent: ${spentBudget.toLocaleString()}</span>
+                <span>Remaining: ${remainingBudget.toLocaleString()}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
       
-      {/* Applications Chart */}
-      <Card className="mb-8 shadow-sm">
-        <CardHeader>
-          <CardTitle>Applications per Job</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {applicationsByJob.length > 0 ? (
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={applicationsByJob}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 80,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={80} 
-                    tick={{ fontSize: 12 }} 
-                  />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="applications" fill="#4f46e5" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No jobs data available. Post jobs to see statistics.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Recent Jobs */}
         <Card className="shadow-sm">
           <CardHeader>
@@ -270,6 +253,112 @@ const ProviderDashboard = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Budget and Spending Chart (moved below) */}
+      <Card className="mb-8 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Budget & Spending Tracker</CardTitle>
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center">
+              <div className="h-3 w-3 rounded-full bg-purple-500 mr-1"></div>
+              <span className="text-xs">Budget</span>
+            </div>
+            <div className="flex items-center">
+              <div className="h-3 w-3 rounded-full bg-blue-500 mr-1"></div>
+              <span className="text-xs">Spent</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={{
+            budget: { theme: { light: '#9b87f5', dark: '#9b87f5' } },
+            spent: { theme: { light: '#0ea5e9', dark: '#0ea5e9' } },
+          }} className="h-80">
+            <AreaChart
+              data={budgetData}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 30,
+                bottom: 20,
+              }}
+            >
+              <defs>
+                <linearGradient id="colorBudget" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#9b87f5" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#9b87f5" stopOpacity={0.1} />
+                </linearGradient>
+                <linearGradient id="colorSpent" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="month" />
+              <YAxis 
+                tickFormatter={(value) => `$${value.toLocaleString()}`}
+                width={80}
+              />
+              <ChartTooltip content={<ChartTooltipContent formatter={(value) => `$${value.toLocaleString()}`} />} />
+              <Area 
+                type="monotone" 
+                dataKey="budget" 
+                stroke="#9b87f5" 
+                fillOpacity={1} 
+                fill="url(#colorBudget)" 
+                activeDot={{ r: 6 }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="spent" 
+                stroke="#0ea5e9" 
+                fillOpacity={1} 
+                fill="url(#colorSpent)" 
+              />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+      
+      {/* Applications Chart moved below */}
+      <Card className="mb-8 shadow-sm">
+        <CardHeader>
+          <CardTitle>Applications per Job</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {applicationsByJob.length > 0 ? (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={applicationsByJob}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 80,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={80} 
+                    tick={{ fontSize: 12 }} 
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="applications" fill="#4f46e5" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No jobs data available. Post jobs to see statistics.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
