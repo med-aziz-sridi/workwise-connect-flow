@@ -29,7 +29,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const PostJob = () => {
   const { user } = useAuth();
-  const { addJob } = useData();
+  const { createJob } = useData(); // Changed from addJob to createJob
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -57,14 +57,12 @@ const PostJob = () => {
     const skillsArray = data.skills ? data.skills.split(',').map(skill => skill.trim()) : [];
     
     // Add the job
-    addJob({
+    createJob({
       title: data.title,
       description: data.description,
-      budget: data.budget, // Now this is correctly a number
+      budget: data.budget, // Now this is correctly a number thanks to the transform
       skills: skillsArray,
-      providerId: user.id,
-      status: 'open',
-      createdAt: new Date().toISOString(),
+      coverImage: undefined, // Optional field
     });
     
     toast({
