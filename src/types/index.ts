@@ -1,3 +1,4 @@
+
 export type UserRole = 'freelancer' | 'provider';
 
 // Session user information
@@ -12,6 +13,7 @@ export interface User {
   createdAt: string;
   coverPicture?: string;
   verified?: boolean;
+  availableUntil?: string;
 }
 
 // Database profile from Supabase
@@ -26,6 +28,7 @@ export interface Profile {
   skills?: string[];
   created_at: string;
   verified?: boolean;
+  available_until?: string;
 }
 
 export type JobStatus = 'open' | 'closed' | 'completed';

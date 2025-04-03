@@ -1,166 +1,166 @@
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
-import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { X, Plus, DollarSign } from 'lucide-react';
 
-// Form schema with validation
-const formSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters'),
-  description: z.string().min(20, 'Description must be at least 20 characters'),
-  budget: z.string()
-    .min(1, 'Budget is required')
-    .regex(/^\d+(\.\d{1,2})?$/, 'Must be a valid number')
-    .transform((val) => Number(val)), // Transform the string to a number
-  skills: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const PostJob = () => {
-  const { user } = useAuth();
-  const { createJob } = useData(); // Changed from addJob to createJob
-  const { toast } = useToast();
+const PostJob: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { createJob } = useData();
   
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      budget: '',
-      skills: '',
-    },
-  });
-  
-  if (!user || user.role !== 'provider') {
-    return (
-      <AuthRequiredPage 
-        role="provider" 
-        message="Only job providers can post jobs" 
-      />
-    );
-  }
-  
-  const onSubmit = (data: FormValues) => {
-    // Convert skills string to array
-    const skillsArray = data.skills ? data.skills.split(',').map(skill => skill.trim()) : [];
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [budget, setBudget] = useState('');
+  const [skills, setSkills] = useState<string[]>([]);
+  const [newSkill, setNewSkill] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // Add the job
-    createJob({
-      title: data.title,
-      description: data.description,
-      budget: data.budget, // Now this is correctly a number thanks to the transform
-      skills: skillsArray,
-      coverImage: undefined, // Optional field
-    });
-    
-    toast({
-      title: "Job Posted Successfully",
-      description: "Your job has been posted and is now visible to freelancers.",
-    });
-    
-    navigate('/my-jobs');
+    try {
+      await createJob({
+        title,
+        description,
+        skills,
+        budget: Number(budget), // Convert string to number
+        coverImage: undefined
+      });
+      
+      toast.success('Job posted successfully');
+      navigate('/my-jobs');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to post job');
+    }
   };
-  
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
+      setSkills([...skills, newSkill.trim()]);
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setSkills(skills.filter(skill => skill !== skillToRemove));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSkill();
+    }
+  };
+
+  if (!user) return null;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Post a New Job</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Job Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Website Development" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+      <h1 className="text-3xl font-bold mb-8">Post a New Job</h1>
+      
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Details</CardTitle>
+            <CardDescription>
+              Provide detailed information to attract qualified freelancers
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="title">Job Title</Label>
+              <Input 
+                id="title" 
+                placeholder="e.g., Full Stack Developer Needed for E-commerce Website"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
               />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Job Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe the job requirements, expectations, and deliverables..."
-                        className="min-h-32"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Job Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Describe the project, requirements, and expectations..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="min-h-[200px]"
+                required
               />
-              
-              <FormField
-                control={form.control}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Budget (USD)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="Enter your budget" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="skills"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Required Skills (comma-separated)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="e.g. React, TypeScript, UI Design" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end">
-                <Button 
-                  type="submit" 
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Post Job
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="budget">Budget ($USD)</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                <Input 
+                  id="budget" 
+                  type="number"
+                  placeholder="e.g., 1000"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  className="pl-10"
+                  required
+                  min="1"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="skills">Required Skills</Label>
+              <div className="flex gap-2">
+                <Input 
+                  id="skills" 
+                  placeholder="e.g., React"
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+                <Button type="button" onClick={handleAddSkill}>
+                  <Plus className="h-4 w-4" />
                 </Button>
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+              
+              <div className="flex flex-wrap gap-2 mt-3">
+                {skills.map((skill, index) => (
+                  <Badge key={index} variant="secondary" className="px-3 py-1">
+                    {skill}
+                    <button 
+                      type="button" 
+                      onClick={() => handleRemoveSkill(skill)}
+                      className="ml-2 text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {skills.length === 0 && (
+                  <span className="text-gray-500 text-sm">No skills added yet</span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex justify-end gap-2">
+            <Button variant="outline" type="button" onClick={() => navigate(-1)}>
+              Cancel
+            </Button>
+            <Button type="submit">Post Job</Button>
+          </CardFooter>
+        </Card>
+      </form>
     </div>
   );
 };

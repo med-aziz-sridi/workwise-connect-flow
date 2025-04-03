@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, MessageSquare, Home, ShieldCheck } from 'lucide-react';
+import { Bell, MessageSquare, Home, ShieldCheck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AvailabilityBadge } from '@/components/ui/availability-badge';
 import UserMenu from './UserMenu';
 import { cn } from '@/lib/utils';
 
@@ -94,6 +95,12 @@ const DesktopNav: React.FC = () => {
       {profile?.verified && (
         <div className="px-2 flex items-center">
           <VerificationBadge size="sm" />
+        </div>
+      )}
+      
+      {profile?.role === 'freelancer' && (
+        <div className="px-2 flex items-center">
+          <AvailabilityBadge size="sm" />
         </div>
       )}
       

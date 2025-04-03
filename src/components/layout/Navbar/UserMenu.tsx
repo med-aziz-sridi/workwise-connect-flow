@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Briefcase, LogOut, MessageSquare, User } from 'lucide-react';
+import { Bell, Briefcase, LogOut, MessageSquare, User, Clock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AvailabilityBadge } from '@/components/ui/availability-badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,17 +42,17 @@ const UserMenu: React.FC = () => {
             <AvatarImage src={profile.profile_picture} alt={profile.name} />
             <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
           </Avatar>
-          {profile.verified && (
-            <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5">
-              <VerificationBadge size="sm" />
-            </div>
-          )}
+          <div className="absolute -top-1 -right-1 flex space-x-1 bg-white rounded-full p-0.5">
+            {profile.verified && <VerificationBadge size="sm" />}
+            {profile.role === 'freelancer' && <AvailabilityBadge size="sm" />}
+          </div>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex items-center gap-2">
           <span>My Account</span>
           {profile.verified && <VerificationBadge size="sm" />}
+          {profile.role === 'freelancer' && <AvailabilityBadge size="sm" />}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -86,6 +87,12 @@ const UserMenu: React.FC = () => {
             )}
           </Link>
         </DropdownMenuItem>
+        {profile.role === 'freelancer' && (
+          <DropdownMenuItem>
+            <Clock className="mr-2 h-4 w-4" />
+            <AvailabilityBadge showButton={true} />
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />

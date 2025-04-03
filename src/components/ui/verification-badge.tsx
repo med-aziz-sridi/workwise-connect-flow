@@ -7,11 +7,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tool
 interface VerificationBadgeProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  tooltip?: string;
 }
 
 export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ 
   className, 
-  size = 'md' 
+  size = 'md',
+  tooltip = 'Verified Account'
 }) => {
   const sizeClasses = {
     sm: 'h-3.5 w-3.5',
@@ -28,7 +30,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="text-sm">Verified Account</p>
+          <p className="text-sm">{tooltip}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

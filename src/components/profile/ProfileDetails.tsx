@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pencil, Plus, X, Check, UserCircle, Search, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { Pencil, Plus, X, Check, UserCircle, Search, BadgeCheck, ShieldCheck, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AvailabilityBadge } from '@/components/ui/availability-badge';
 import { 
   Dialog,
   DialogContent,
@@ -150,6 +151,7 @@ const ProfileDetails: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <h2 className="text-2xl font-bold">{profile.name}</h2>
                   {profile.verified && <VerificationBadge className="ml-1" />}
+                  {profile.role === 'freelancer' && <AvailabilityBadge className="ml-1" />}
                 </div>
               )}
               <div className="flex items-center gap-2 mt-1">
@@ -191,6 +193,11 @@ const ProfileDetails: React.FC = () => {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                )}
+                {profile.role === 'freelancer' && (
+                  <div className="ml-2">
+                    <AvailabilityBadge showButton={true} />
+                  </div>
                 )}
               </div>
             </div>
