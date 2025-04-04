@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,8 +13,8 @@ import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'react-toastify';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 const registerSchema = z.object({
   name: z
@@ -42,6 +43,7 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -83,12 +85,13 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
       }
       
       // Proceed with registration if email doesn't exist
-      await registerWithEmail(data.email, data.password, data.name, data.role);
+      await registerWithEmail(data.name, data.email, data.password, data.role as UserRole);
       toast({
         title: "Registration successful",
         description: "Please check your email to verify your account.",
       });
       
+      setRegistrationSuccess(true);
       if (onSuccess) onSuccess();
     } catch (err) {
       console.error('Registration error:', err);
@@ -258,13 +261,13 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
                   }}>Reset your password</Link>?
                 </p>
               ) : (
-                <p>{error}</p>
+                <p dangerouslySetInnerHTML={{ __html: error }} />
               )}
             </div>
           )}
           
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
+          <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
+            {isLoading || isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating Account...

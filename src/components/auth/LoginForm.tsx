@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -49,13 +49,6 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
-  const [resetFormState, setResetFormState] = useState<{
-    isSubmitting: boolean;
-    error: string | null;
-  }>({
-    isSubmitting: false,
-    error: null
-  });
   const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
@@ -72,6 +65,14 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
     defaultValues: {
       email: '',
     },
+  });
+
+  const [resetFormState, setResetFormState] = useState<{
+    isSubmitting: boolean;
+    error: string | null;
+  }>({
+    isSubmitting: false,
+    error: null
   });
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -100,9 +101,7 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
       await resetPassword(data.email);
       setResetSuccess(true);
       setResetFormState({ isSubmitting: false, error: null });
-      
-      // Reset the form
-      passwordResetForm.reset();
+      passwordResetForm.reset(); // Reset the form after successful submission
     } catch (err) {
       setResetFormState({ 
         isSubmitting: false, 
