@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Session, User as SupabaseUser, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,7 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("Auth state changed:", event);
@@ -59,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (currentSession?.user) {
           setIsLoading(true);
           try {
-            // Fetch user profile using setTimeout to prevent deadlock
             setTimeout(async () => {
               const { data: profileData, error } = await supabase
                 .from('profiles')
@@ -89,7 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     const initializeAuth = async () => {
       try {
         const { data: { session: existingSession } } = await supabase.auth.getSession();
@@ -133,7 +129,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       if (role && data.user) {
-        // Check if the user role matches
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
@@ -143,7 +138,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (profileError) throw profileError;
         
         if (profileData && profileData.role !== role) {
-          // Sign out if role doesn't match
           await supabase.auth.signOut();
           throw new Error(`Account is not registered as a ${role}`);
         }
@@ -211,7 +205,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       const authError = error as AuthError;
       
-      // Special handling for "User already registered" error
       if (authError.message?.includes('already registered')) {
         toast({
           title: "Email already in use",
@@ -256,18 +249,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully",
-      });
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      setProfile(null);
+      window.location.href = '/';
     } catch (error) {
-      console.error('Error during logout:', error);
-      toast({
-        title: "Logout failed",
-        description: "An error occurred during logout",
-        variant: "destructive",
-      });
+      console.error('Error logging out:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -282,7 +274,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Update local profile state
       const updatedProfile = { ...profile, ...userData };
       setProfile(updatedProfile);
       setUser(mapProfileToUser(updatedProfile));
@@ -301,19 +292,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const value = {
+    user,
+    profile,
+    session,
+    isLoading,
+    loginWithEmail,
+    loginWithGoogle,
+    registerWithEmail,
+    logout,
+    updateProfile,
+    resetPassword,
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      profile,
-      session,
-      isLoading,
-      loginWithEmail,
-      loginWithGoogle,
-      registerWithEmail,
-      logout,
-      updateProfile,
-      resetPassword,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

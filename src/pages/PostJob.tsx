@@ -11,21 +11,54 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, DollarSign } from 'lucide-react';
+import { X, Plus, DollarSign, Search } from 'lucide-react';
+import { 
+  Command, 
+  CommandEmpty, 
+  CommandGroup, 
+  CommandInput, 
+  CommandItem, 
+  CommandList 
+} from '@/components/ui/command';
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from '@/components/ui/popover';
+
+// Sample common skills for the dropdown
+const commonSkills = [
+  'React', 'Angular', 'Vue', 'JavaScript', 'TypeScript', 'Node.js',
+  'Python', 'Java', 'C#', 'PHP', 'Ruby', 'Go', 'Swift', 'Kotlin',
+  'HTML', 'CSS', 'SASS', 'Tailwind CSS', 'Bootstrap', 'Material UI',
+  'GraphQL', 'REST API', 'SQL', 'MongoDB', 'Firebase', 'AWS',
+  'Docker', 'Kubernetes', 'CI/CD', 'Git', 'GitHub', 'GitLab',
+  'UI/UX Design', 'Figma', 'Adobe XD', 'Photoshop', 'Illustrator',
+  'Project Management', 'Agile', 'Scrum', 'Jira', 'Trello',
+  'Content Writing', 'SEO', 'Digital Marketing', 'Social Media',
+  'Data Analysis', 'Machine Learning', 'Artificial Intelligence',
+  'Mobile Development', 'iOS', 'Android', 'Flutter', 'React Native',
+];
 
 const PostJob: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { createJob } = useData();
+  const { createJob, jobs } = useData();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
+  const [isSkillPopoverOpen, setIsSkillPopoverOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!title || !description || !budget || skills.length === 0) {
+      toast.error('Please fill in all required fields and add at least one skill');
+      return;
+    }
     
     try {
       await createJob({
@@ -44,10 +77,12 @@ const PostJob: React.FC = () => {
     }
   };
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      setSkills([...skills, newSkill.trim()]);
+  const handleAddSkill = (skillToAdd: string) => {
+    const trimmedSkill = skillToAdd.trim();
+    if (trimmedSkill && !skills.includes(trimmedSkill)) {
+      setSkills([...skills, trimmedSkill]);
       setNewSkill('');
+      setIsSkillPopoverOpen(false);
     }
   };
 
@@ -58,9 +93,14 @@ const PostJob: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAddSkill();
+      handleAddSkill(newSkill);
     }
   };
+
+  const filteredSkills = commonSkills.filter(skill => 
+    skill.toLowerCase().includes(newSkill.toLowerCase()) && 
+    !skills.includes(skill)
+  );
 
   if (!user) return null;
 
@@ -121,14 +161,65 @@ const PostJob: React.FC = () => {
             <div className="space-y-2">
               <Label htmlFor="skills">Required Skills</Label>
               <div className="flex gap-2">
-                <Input 
-                  id="skills" 
-                  placeholder="e.g., React"
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-                <Button type="button" onClick={handleAddSkill}>
+                <Popover open={isSkillPopoverOpen} onOpenChange={setIsSkillPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                      <Input 
+                        id="skills" 
+                        placeholder="Search or type a skill"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="pl-10"
+                        onFocus={() => setIsSkillPopoverOpen(true)}
+                      />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0" align="start" side="bottom" sideOffset={5}>
+                    <Command>
+                      <CommandInput placeholder="Search skills..." value={newSkill} onValueChange={setNewSkill} />
+                      <CommandList>
+                        <CommandEmpty>
+                          {newSkill.trim() ? (
+                            <div className="py-3 px-4">
+                              <p>No matching skills</p>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="mt-2"
+                                onClick={() => handleAddSkill(newSkill)}
+                              >
+                                Add "{newSkill}"
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="py-3 px-4">Type to search skills</p>
+                          )}
+                        </CommandEmpty>
+                        <CommandGroup heading="Available Skills">
+                          {filteredSkills.slice(0, 7).map((skill) => (
+                            <CommandItem 
+                              key={skill} 
+                              value={skill}
+                              onSelect={() => handleAddSkill(skill)}
+                            >
+                              {skill}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        {newSkill.trim() && !commonSkills.some(skill => skill.toLowerCase() === newSkill.toLowerCase()) && (
+                          <CommandGroup heading="Add Custom Skill">
+                            <CommandItem onSelect={() => handleAddSkill(newSkill)}>
+                              Add "{newSkill}"
+                            </CommandItem>
+                          </CommandGroup>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Button type="button" onClick={() => handleAddSkill(newSkill)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>

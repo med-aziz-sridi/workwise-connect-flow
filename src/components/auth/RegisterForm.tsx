@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +12,8 @@ import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'react-toastify';
 
 const registerSchema = z.object({
   name: z
@@ -40,6 +41,7 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const { registerWithEmail, loginWithGoogle, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -55,20 +57,44 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const onSubmit = async (data: RegisterFormValues) => {
     try {
       setError(null);
-      await registerWithEmail(data.name, data.email, data.password, data.role as UserRole);
-      setRegistrationSuccess(true);
+      setIsSubmitting(true);
+      
+      // First, check if the email already exists
+      const { data: existingUser } = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: {
+          shouldCreateUser: false,
+        }
+      });
+      
+      // If we get a successful response but the user doesn't exist, the OTP won't be sent
+      // but there's no specific error for this. Let's check the user table directly
+      const { data: existingProfiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', data.email)
+        .limit(1);
+      
+      if (profileError) throw profileError;
+      
+      if (existingProfiles && existingProfiles.length > 0) {
+        setError(`This email is already in use. Did you mean to <a href="/login" class="text-blue-600 hover:underline">Sign in</a> or <a href="/reset-password" class="text-blue-600 hover:underline">Reset your password</a>?`);
+        return;
+      }
+      
+      // Proceed with registration if email doesn't exist
+      await registerWithEmail(data.email, data.password, data.name, data.role);
+      toast({
+        title: "Registration successful",
+        description: "Please check your email to verify your account.",
+      });
+      
       if (onSuccess) onSuccess();
     } catch (err) {
-      if (err instanceof Error) {
-        // Handle "Email already in use" error
-        if (err.message.includes('already') || err.message.includes('exist')) {
-          setError('This email is already in use. Did you mean to reset your password?');
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError('Failed to register');
-      }
+      console.error('Registration error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to register');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
