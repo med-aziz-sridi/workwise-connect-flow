@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("Auth state changed:", event);
         setSession(currentSession);
 
         if (currentSession?.user) {
@@ -197,6 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name,
             role,
           },
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
       
@@ -204,15 +206,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast({
         title: "Registration successful",
-        description: `Welcome to Freeness, ${name}!`,
+        description: "A confirmation email has been sent. Please verify your email to proceed.",
       });
     } catch (error) {
       const authError = error as AuthError;
-      toast({
-        title: "Registration failed",
-        description: authError.message || "An error occurred during registration",
-        variant: "destructive",
-      });
+      
+      // Special handling for "User already registered" error
+      if (authError.message?.includes('already registered')) {
+        toast({
+          title: "Email already in use",
+          description: "This email is already registered. Try signing in or resetting your password.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Registration failed",
+          description: authError.message || "An error occurred during registration",
+          variant: "destructive",
+        });
+      }
       throw error;
     } finally {
       setIsLoading(false);

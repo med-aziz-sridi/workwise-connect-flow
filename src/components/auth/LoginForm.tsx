@@ -11,6 +11,7 @@ import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Mail } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useToast } from '@/components/ui/use-toast';
 
 const loginSchema = z.object({
   email: z
@@ -47,6 +49,7 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -86,14 +89,25 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
 
   const handleResetPassword = async (data: ResetPasswordFormValues) => {
     try {
+      setResetForm({ isSubmitting: true, error: null });
       await resetPassword(data.email);
       setResetSuccess(true);
+      setResetForm({ isSubmitting: false, error: null });
     } catch (err) {
-      resetForm.setError('email', { 
-        message: err instanceof Error ? err.message : 'Failed to send reset email' 
+      setResetForm({ 
+        isSubmitting: false, 
+        error: err instanceof Error ? err.message : 'Failed to send reset email' 
       });
     }
   };
+
+  const [resetForm, setResetForm] = useState<{
+    isSubmitting: boolean;
+    error: string | null;
+  }>({
+    isSubmitting: false,
+    error: null
+  });
 
   return (
     <div className="space-y-4">
@@ -194,7 +208,7 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
           <div className="flex justify-end">
             <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="link" className="px-0 text-sm" type="button">
+                <Button variant="link" className="px-0 text-sm" type="button" aria-label="Forgot password?">
                   Forgot password?
                 </Button>
               </DialogTrigger>
@@ -208,12 +222,13 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
                 
                 {resetSuccess ? (
                   <div className="space-y-4 py-4">
-                    <p className="text-sm text-green-600">
-                      Password reset link has been sent to your email.
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Please check your inbox and follow the instructions to reset your password.
-                    </p>
+                    <Alert className="bg-green-50 border-green-200">
+                      <AlertTitle className="text-green-800">Password reset link sent!</AlertTitle>
+                      <AlertDescription className="text-green-700">
+                        <p>We've sent a password reset link to your email.</p>
+                        <p className="text-sm mt-2">Please check your inbox and follow the instructions to reset your password.</p>
+                      </AlertDescription>
+                    </Alert>
                   </div>
                 ) : (
                   <Form {...resetForm}>
@@ -231,9 +246,14 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
                           </FormItem>
                         )}
                       />
+                      
+                      {resetForm.error && (
+                        <p className="text-sm font-medium text-destructive">{resetForm.error}</p>
+                      )}
+                      
                       <DialogFooter>
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? (
+                        <Button type="submit" disabled={resetForm.isSubmitting}>
+                          {resetForm.isSubmitting ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Sending...

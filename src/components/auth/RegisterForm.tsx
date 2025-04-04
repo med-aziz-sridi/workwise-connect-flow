@@ -11,6 +11,8 @@ import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Link } from 'react-router-dom';
 
 const registerSchema = z.object({
   name: z
@@ -37,6 +39,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const { registerWithEmail, loginWithGoogle, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -53,9 +56,19 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
     try {
       setError(null);
       await registerWithEmail(data.name, data.email, data.password, data.role as UserRole);
+      setRegistrationSuccess(true);
       if (onSuccess) onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register');
+      if (err instanceof Error) {
+        // Handle "Email already in use" error
+        if (err.message.includes('already') || err.message.includes('exist')) {
+          setError('This email is already in use. Did you mean to reset your password?');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Failed to register');
+      }
     }
   };
 
@@ -68,6 +81,21 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
       setError(err instanceof Error ? err.message : 'Failed to login with Google');
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <Alert className="bg-green-50 border-green-200">
+        <AlertTitle className="text-green-800 text-lg font-semibold">Registration Successful!</AlertTitle>
+        <AlertDescription className="text-green-700">
+          <p className="mb-4">Please check your email to confirm your account.</p>
+          <p className="text-sm">Once confirmed, you'll be able to sign in to your account.</p>
+          <Button variant="link" className="p-0 mt-2" asChild>
+            <Link to="/login">Return to Login</Link>
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -191,7 +219,23 @@ const RegisterForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
             )}
           />
           
-          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+          {error && (
+            <div className="text-sm font-medium text-destructive">
+              {error.includes("reset your password") ? (
+                <p>
+                  {error.split("Did you mean to")[0]} 
+                  Did you mean to <Link to="/login" className="text-blue-600 hover:underline" onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector('[aria-label="Forgot password?"]')?.dispatchEvent(
+                      new MouseEvent('click', { bubbles: true })
+                    );
+                  }}>Reset your password</Link>?
+                </p>
+              ) : (
+                <p>{error}</p>
+              )}
+            </div>
+          )}
           
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (

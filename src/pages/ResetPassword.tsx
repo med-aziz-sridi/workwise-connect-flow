@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const resetPasswordSchema = z.object({
   password: z
@@ -29,7 +30,10 @@ const ResetPassword: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
   const navigate = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [hasResetToken, setHasResetToken] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -38,6 +42,38 @@ const ResetPassword: React.FC = () => {
       confirmPassword: '',
     },
   });
+
+  useEffect(() => {
+    // Check if password reset token is present in the URL
+    const checkResetToken = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      
+      // Check if we're in a password recovery flow
+      const hash = window.location.hash;
+      const type = new URLSearchParams(hash.substring(1)).get('type');
+      
+      if (error) {
+        console.error("Error checking auth session:", error);
+      }
+      
+      setHasResetToken(type === 'recovery');
+      setAuthChecked(true);
+    };
+    
+    checkResetToken();
+  }, []);
+
+  useEffect(() => {
+    let timer: number | undefined;
+    if (success && countdown > 0) {
+      timer = window.setTimeout(() => setCountdown(countdown - 1), 1000);
+    } else if (success && countdown === 0) {
+      navigate('/login');
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [success, countdown, navigate]);
 
   const onSubmit = async (data: ResetPasswordFormValues) => {
     setIsLoading(true);
@@ -51,15 +87,54 @@ const ResetPassword: React.FC = () => {
       if (error) throw error;
       
       setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
     } catch (err: any) {
       setError(err.message || 'An error occurred while updating your password');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (!hasResetToken && authChecked) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="w-full max-w-md">
+          <Card className="shadow-lg border-t-4 border-t-blue-500">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-center">
+                Invalid Reset Link
+              </CardTitle>
+              <CardDescription className="text-center">
+                This password reset link is invalid or has expired.
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <Alert variant="destructive">
+                <AlertTitle>Invalid link</AlertTitle>
+                <AlertDescription>
+                  The password reset link you clicked is invalid or has expired. Please request a new password reset link.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+            
+            <CardFooter className="flex justify-center">
+              <Button asChild className="w-full">
+                <Link to="/login">Return to Login</Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
@@ -76,10 +151,13 @@ const ResetPassword: React.FC = () => {
           
           <CardContent>
             {success ? (
-              <div className="p-4 bg-green-50 text-green-700 rounded mb-4">
-                <p className="font-medium">Password updated successfully!</p>
-                <p className="text-sm mt-1">You'll be redirected to the login page in a moment.</p>
-              </div>
+              <Alert className="bg-green-50 border-green-200">
+                <AlertTitle className="text-green-800 text-lg font-semibold">Password updated successfully!</AlertTitle>
+                <AlertDescription className="text-green-700">
+                  <p className="mb-2">Your password has been reset successfully.</p>
+                  <p>You'll be redirected to the login page in {countdown} seconds.</p>
+                </AlertDescription>
+              </Alert>
             ) : (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -111,7 +189,12 @@ const ResetPassword: React.FC = () => {
                     )}
                   />
                   
-                  {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertTitle>Error</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
                   
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
