@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, DollarSign, Search } from 'lucide-react';
+import { X, Plus, DollarSign, Search, Users } from 'lucide-react';
 import { 
   Command, 
   CommandEmpty, 
@@ -25,6 +25,13 @@ import {
   PopoverContent, 
   PopoverTrigger 
 } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Sample common skills for the dropdown
 const commonSkills = [
@@ -52,6 +59,7 @@ const PostJob: React.FC = () => {
   const [newSkill, setNewSkill] = useState('');
   const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
   const [isSkillPopoverOpen, setIsSkillPopoverOpen] = useState(false);
+  const [numberOfPeople, setNumberOfPeople] = useState('1');
 
   // Update filtered skills whenever newSkill or skills change
   useEffect(() => {
@@ -80,7 +88,8 @@ const PostJob: React.FC = () => {
         description,
         skills,
         budget: Number(budget), // Convert string to number
-        coverImage: undefined
+        coverImage: undefined,
+        numberOfPeople: Number(numberOfPeople) // Add number of people needed
       });
       
       toast.success('Job posted successfully');
@@ -153,20 +162,44 @@ const PostJob: React.FC = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="budget">Budget ($USD)</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                <Input 
-                  id="budget" 
-                  type="number"
-                  placeholder="e.g., 1000"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  className="pl-10"
-                  required
-                  min="1"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="budget">Budget ($USD)</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Input 
+                    id="budget" 
+                    type="number"
+                    placeholder="e.g., 1000"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                    className="pl-10"
+                    required
+                    min="1"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="numberOfPeople">Number of People Needed</Label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Select 
+                    value={numberOfPeople}
+                    onValueChange={setNumberOfPeople}
+                  >
+                    <SelectTrigger className="pl-10">
+                      <SelectValue placeholder="Select number of people" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} {num === 1 ? 'person' : 'people'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             

@@ -1,3 +1,4 @@
+
 export type UserRole = 'freelancer' | 'provider';
 
 // Session user information
@@ -13,6 +14,8 @@ export interface User {
   coverPicture?: string;
   verified?: boolean;
   availableUntil?: string;
+  location?: string;
+  languages?: string[];
 }
 
 // Database profile from Supabase
@@ -28,6 +31,8 @@ export interface Profile {
   created_at: string;
   verified?: boolean;
   available_until?: string;
+  location?: string;
+  languages?: string[];
 }
 
 export type JobStatus = 'open' | 'closed' | 'completed';
@@ -45,6 +50,7 @@ export interface Job {
   createdAt: string;
   status: JobStatus;
   coverImage?: string;
+  numberOfPeople?: number;
 }
 
 export interface CreateJobInput {
@@ -53,6 +59,7 @@ export interface CreateJobInput {
   skills: string[];
   budget: number;
   coverImage?: string;
+  numberOfPeople?: number;
 }
 
 export interface FreelancerInfo {
@@ -86,6 +93,8 @@ export interface Project {
   images: string[];
   freelancerId: string;
   createdAt: string;
+  technologies?: string[];
+  role?: string;
 }
 
 export interface Notification {
