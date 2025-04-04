@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { UserRole } from '@/types';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -49,6 +49,13 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetFormState, setResetFormState] = useState<{
+    isSubmitting: boolean;
+    error: string | null;
+  }>({
+    isSubmitting: false,
+    error: null
+  });
   const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
@@ -60,7 +67,7 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
     },
   });
 
-  const resetForm = useForm<ResetPasswordFormValues>({
+  const passwordResetForm = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
       email: '',
@@ -89,25 +96,20 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
 
   const handleResetPassword = async (data: ResetPasswordFormValues) => {
     try {
-      setResetForm({ isSubmitting: true, error: null });
+      setResetFormState({ isSubmitting: true, error: null });
       await resetPassword(data.email);
       setResetSuccess(true);
-      setResetForm({ isSubmitting: false, error: null });
+      setResetFormState({ isSubmitting: false, error: null });
+      
+      // Reset the form
+      passwordResetForm.reset();
     } catch (err) {
-      setResetForm({ 
+      setResetFormState({ 
         isSubmitting: false, 
         error: err instanceof Error ? err.message : 'Failed to send reset email' 
       });
     }
   };
-
-  const [resetForm, setResetForm] = useState<{
-    isSubmitting: boolean;
-    error: string | null;
-  }>({
-    isSubmitting: false,
-    error: null
-  });
 
   return (
     <div className="space-y-4">
@@ -231,10 +233,10 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
                     </Alert>
                   </div>
                 ) : (
-                  <Form {...resetForm}>
-                    <form onSubmit={resetForm.handleSubmit(handleResetPassword)} className="space-y-4">
+                  <Form {...passwordResetForm}>
+                    <form onSubmit={passwordResetForm.handleSubmit(handleResetPassword)} className="space-y-4">
                       <FormField
-                        control={resetForm.control}
+                        control={passwordResetForm.control}
                         name="email"
                         render={({ field }) => (
                           <FormItem>
@@ -247,13 +249,13 @@ const LoginForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
                         )}
                       />
                       
-                      {resetForm.error && (
-                        <p className="text-sm font-medium text-destructive">{resetForm.error}</p>
+                      {resetFormState.error && (
+                        <p className="text-sm font-medium text-destructive">{resetFormState.error}</p>
                       )}
                       
                       <DialogFooter>
-                        <Button type="submit" disabled={resetForm.isSubmitting}>
-                          {resetForm.isSubmitting ? (
+                        <Button type="submit" disabled={resetFormState.isSubmitting}>
+                          {resetFormState.isSubmitting ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Sending...
