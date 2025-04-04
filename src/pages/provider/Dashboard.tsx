@@ -36,6 +36,7 @@ const ProviderDashboard = () => {
   const activeJobs = myJobs.filter(job => job.status === 'open').length;
   const totalApplicants = myApplications.length;
   const pendingApplications = myApplications.filter(app => app.status === 'pending').length;
+  const acceptedApplications = myApplications.filter(app => app.status === 'accepted').length;
   
   // Data for charts
   const applicationsByJob = myJobs.map(job => ({
@@ -81,7 +82,7 @@ const ProviderDashboard = () => {
       </div>
       
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -142,6 +143,25 @@ const ProviderDashboard = () => {
                 <span>Spent: ${spentBudget.toLocaleString()}</span>
                 <span>Remaining: ${remainingBudget.toLocaleString()}</span>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Working Freelancers</p>
+                <h3 className="text-3xl font-bold text-gray-900 mt-1">{acceptedApplications}</h3>
+              </div>
+              <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-indigo-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button asChild variant="outline" size="sm" className="w-full">
+                <Link to="/working-freelancers">View Team</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

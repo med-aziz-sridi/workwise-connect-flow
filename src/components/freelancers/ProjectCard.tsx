@@ -13,7 +13,7 @@ export interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, showActions = false }) => {
-  const { title, description, images } = project;
+  const { title, description, images, technologies = [] } = project;
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
   return (
@@ -55,6 +55,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete, showAction
         <CardContent className="p-4">
           <h3 className="font-semibold text-lg mb-2">{title}</h3>
           <p className="text-gray-600 text-sm line-clamp-3">{description}</p>
+          
+          {technologies.length > 0 && (
+            <div className="mt-3">
+              <div className="flex flex-wrap gap-1">
+                {technologies.slice(0, 3).map((tech, index) => (
+                  <span key={index} className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5">
+                    {tech}
+                  </span>
+                ))}
+                {technologies.length > 3 && (
+                  <span className="text-xs bg-gray-100 text-gray-800 rounded-full px-2 py-0.5">
+                    +{technologies.length - 3}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           
           {images.length > 1 && (
             <div className="flex mt-3 gap-2 overflow-x-auto">

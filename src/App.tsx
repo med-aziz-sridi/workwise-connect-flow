@@ -32,6 +32,7 @@ import PrivateRoute from "./components/auth/PrivateRoute";
 import RoleRoute from "./components/auth/RoleRoute";
 import Messages from "./pages/Messages";
 import Conversation from "./pages/Conversation";
+import WorkingFreelancers from "./pages/provider/WorkingFreelancers";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,14 @@ const App = () => (
                   element={
                     <RoleRoute role="provider">
                       <MyJobs />
+                    </RoleRoute>
+                  } 
+                />
+                <Route 
+                  path="/working-freelancers" 
+                  element={
+                    <RoleRoute role="provider">
+                      <WorkingFreelancers />
                     </RoleRoute>
                   } 
                 />
