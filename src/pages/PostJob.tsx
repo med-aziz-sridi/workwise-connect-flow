@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
@@ -50,7 +50,21 @@ const PostJob: React.FC = () => {
   const [budget, setBudget] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
+  const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
   const [isSkillPopoverOpen, setIsSkillPopoverOpen] = useState(false);
+
+  // Update filtered skills whenever newSkill or skills change
+  useEffect(() => {
+    if (newSkill.trim() === '') {
+      setFilteredSkills([]);
+    } else {
+      const filtered = commonSkills.filter(skill => 
+        skill.toLowerCase().includes(newSkill.toLowerCase()) && 
+        !skills.includes(skill)
+      );
+      setFilteredSkills(filtered);
+    }
+  }, [newSkill, skills]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +96,7 @@ const PostJob: React.FC = () => {
     if (trimmedSkill && !skills.includes(trimmedSkill)) {
       setSkills([...skills, trimmedSkill]);
       setNewSkill('');
+      setFilteredSkills([]);
       setIsSkillPopoverOpen(false);
     }
   };
@@ -93,14 +108,11 @@ const PostJob: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAddSkill(newSkill);
+      if (newSkill.trim()) {
+        handleAddSkill(newSkill);
+      }
     }
   };
-
-  const filteredSkills = commonSkills.filter(skill => 
-    skill.toLowerCase().includes(newSkill.toLowerCase()) && 
-    !skills.includes(skill)
-  );
 
   if (!user) return null;
 
@@ -176,7 +188,7 @@ const PostJob: React.FC = () => {
                       />
                     </div>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0" align="start" side="bottom" sideOffset={5}>
+                  <PopoverContent className="p-0 w-[300px]" align="start" side="bottom" sideOffset={5}>
                     <Command>
                       <CommandInput placeholder="Search skills..." value={newSkill} onValueChange={setNewSkill} />
                       <CommandList>
@@ -197,17 +209,19 @@ const PostJob: React.FC = () => {
                             <p className="py-3 px-4">Type to search skills</p>
                           )}
                         </CommandEmpty>
-                        <CommandGroup heading="Available Skills">
-                          {filteredSkills.slice(0, 7).map((skill) => (
-                            <CommandItem 
-                              key={skill} 
-                              value={skill}
-                              onSelect={() => handleAddSkill(skill)}
-                            >
-                              {skill}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
+                        {filteredSkills.length > 0 && (
+                          <CommandGroup heading="Available Skills">
+                            {filteredSkills.slice(0, 10).map((skill) => (
+                              <CommandItem 
+                                key={skill} 
+                                value={skill}
+                                onSelect={() => handleAddSkill(skill)}
+                              >
+                                {skill}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        )}
                         {newSkill.trim() && !commonSkills.some(skill => skill.toLowerCase() === newSkill.toLowerCase()) && (
                           <CommandGroup heading="Add Custom Skill">
                             <CommandItem onSelect={() => handleAddSkill(newSkill)}>
@@ -219,7 +233,7 @@ const PostJob: React.FC = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Button type="button" onClick={() => handleAddSkill(newSkill)}>
+                <Button type="button" onClick={() => newSkill.trim() && handleAddSkill(newSkill)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>

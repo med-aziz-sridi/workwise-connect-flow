@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -216,7 +215,7 @@ const ProviderDashboard = () => {
                               to={`/applicants/${application.freelancerId}`} 
                               className="hover:text-blue-600"
                             >
-                              Applicant ID: {application.freelancerId}
+                              {application.freelancer?.name || 'Applicant'}
                             </Link>
                           </h4>
                           <p className="text-sm text-gray-600 mt-1">
