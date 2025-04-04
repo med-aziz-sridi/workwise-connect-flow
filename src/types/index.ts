@@ -1,4 +1,3 @@
-
 export type UserRole = 'freelancer' | 'provider';
 
 // Session user information

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
@@ -22,6 +21,8 @@ interface DataContextType {
     certifications: boolean;
   };
   createJob: (job: CreateJobInput) => Promise<void>;
+  updateJob: (job: Job) => Promise<void>;
+  deleteJob: (jobId: string) => Promise<void>;
   applyToJob: (jobId: string, coverLetter: string) => Promise<void>;
   updateApplicationStatus: (applicationId: string, status: 'accepted' | 'rejected') => Promise<void>;
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => Promise<void>;
@@ -455,6 +456,162 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast({
         title: "Job creation failed",
         description: "An error occurred while creating your job",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateJob = async (job: Job) => {
+    if (!user || profile?.role !== 'provider') {
+      toast({
+        title: "Permission denied",
+        description: "Only job providers can update jobs",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { data: jobData, error: checkError } = await supabase
+        .from('jobs')
+        .select('provider_id')
+        .eq('id', job.id)
+        .single();
+      
+      if (checkError) throw checkError;
+      
+      if (jobData.provider_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You can only update your own jobs",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('jobs')
+        .update({
+          title: job.title,
+          description: job.description,
+          skills: job.skills,
+          budget: job.budget,
+          status: job.status,
+          cover_image: job.coverImage,
+        })
+        .eq('id', job.id);
+      
+      if (error) throw error;
+      
+      // If the job is being closed, notify applicants
+      if (job.status === 'closed') {
+        const { data: applicants, error: applicantsError } = await supabase
+          .from('applications')
+          .select('freelancer_id')
+          .eq('job_id', job.id);
+        
+        if (!applicantsError && applicants.length > 0) {
+          const notifications = applicants.map(app => ({
+            user_id: app.freelancer_id,
+            message: `The job "${job.title}" has been closed by the provider.`,
+            type: 'job' as NotificationType,
+            related_id: job.id,
+          }));
+          
+          await supabase
+            .from('notifications')
+            .insert(notifications);
+        }
+      }
+      
+      toast({
+        title: "Job updated",
+        description: "Your job has been updated successfully",
+      });
+      
+      fetchJobs();
+    } catch (error) {
+      console.error('Error updating job:', error);
+      toast({
+        title: "Job update failed",
+        description: "An error occurred while updating the job",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteJob = async (jobId: string) => {
+    if (!user || profile?.role !== 'provider') {
+      toast({
+        title: "Permission denied",
+        description: "Only job providers can delete jobs",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { data: jobData, error: checkError } = await supabase
+        .from('jobs')
+        .select('provider_id, title')
+        .eq('id', jobId)
+        .single();
+      
+      if (checkError) throw checkError;
+      
+      if (jobData.provider_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You can only delete your own jobs",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Notify applicants before deleting
+      const { data: applicants, error: applicantsError } = await supabase
+        .from('applications')
+        .select('freelancer_id')
+        .eq('job_id', jobId);
+      
+      if (!applicantsError && applicants.length > 0) {
+        const notifications = applicants.map(app => ({
+          user_id: app.freelancer_id,
+          message: `The job "${jobData.title}" has been deleted by the provider.`,
+          type: 'job' as NotificationType,
+          related_id: jobId,
+        }));
+        
+        await supabase
+          .from('notifications')
+          .insert(notifications);
+      }
+      
+      // Delete applications first to maintain referential integrity
+      await supabase
+        .from('applications')
+        .delete()
+        .eq('job_id', jobId);
+      
+      // Now delete the job
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Job deleted",
+        description: "Your job has been deleted successfully",
+      });
+      
+      fetchJobs();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast({
+        title: "Job deletion failed",
+        description: "An error occurred while deleting the job",
         variant: "destructive",
       });
     }
@@ -914,6 +1071,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         certifications,
         isLoading,
         createJob,
+        updateJob,
+        deleteJob,
         applyToJob,
         updateApplicationStatus,
         addProject,
