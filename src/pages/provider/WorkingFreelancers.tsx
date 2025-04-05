@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
@@ -8,14 +8,21 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Briefcase, MessageSquare, Search, User, Users } from 'lucide-react';
 import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
+import { User as UserType } from '@/types';
 
 const WorkingFreelancers: React.FC = () => {
   const { user } = useAuth();
-  const { applications, jobs, users } = useData();
+  const { applications, jobs, users = [] } = useData();
   const [searchTerm, setSearchTerm] = useState('');
+  
+  useEffect(() => {
+    // This ensures users are loaded
+    if (users.length === 0) {
+      console.log('No users loaded yet');
+    }
+  }, [users]);
   
   if (!user || user.role !== 'provider') {
     return (
@@ -38,14 +45,21 @@ const WorkingFreelancers: React.FC = () => {
   const freelancersByJob = myJobs.map(job => {
     const jobApplications = acceptedApplications.filter(app => app.jobId === job.id);
     const jobFreelancers = jobApplications.map(app => {
-      const freelancer = users.find(u => u.id === app.freelancerId);
+      // Check if users array exists and then find the freelancer
+      const freelancer = users && users.length > 0 
+        ? users.find(u => u.id === app.freelancerId) 
+        : undefined;
+      
       return {
         applicationId: app.id,
         freelancer: freelancer || { 
           id: app.freelancerId,
           name: 'Unknown Freelancer',
-          profilePicture: ''
-        }
+          profilePicture: '',
+          email: '',
+          role: 'freelancer',
+          createdAt: ''
+        } as UserType
       };
     });
     

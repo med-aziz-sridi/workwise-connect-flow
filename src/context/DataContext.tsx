@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Job, Application, Project, Notification, CreateJobInput, Profile, Experience, Certification, JobStatus, ApplicationStatus, NotificationType } from '@/types';
+import { Job, Application, Project, Notification, CreateJobInput, Profile, Experience, Certification, JobStatus, ApplicationStatus, NotificationType, User } from '@/types';
 import { toast as sonnerToast } from 'sonner';
 
 interface DataContextType {
@@ -12,6 +12,7 @@ interface DataContextType {
   notifications: Notification[];
   experiences: Experience[];
   certifications: Certification[];
+  users: User[];
   isLoading: {
     jobs: boolean;
     applications: boolean;
@@ -19,6 +20,7 @@ interface DataContextType {
     notifications: boolean;
     experiences: boolean;
     certifications: boolean;
+    users: boolean;
   };
   createJob: (job: CreateJobInput) => Promise<void>;
   updateJob: (job: Job) => Promise<void>;
@@ -34,6 +36,7 @@ interface DataContextType {
   refreshNotifications: () => Promise<void>;
   refreshExperiences: () => Promise<void>;
   refreshCertifications: () => Promise<void>;
+  refreshUsers: () => Promise<void>;
   addExperience: (experience: Omit<Experience, 'id' | 'freelancerId'>) => Promise<void>;
   deleteExperience: (experienceId: string) => Promise<void>;
   addCertification: (certification: Omit<Certification, 'id' | 'freelancerId'>) => Promise<void>;
@@ -60,7 +63,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
-  
+  const [users, setUsers] = useState<User[]>([]);
+
   const [isLoading, setIsLoading] = useState({
     jobs: false,
     applications: false,
@@ -68,6 +72,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     notifications: false,
     experiences: false,
     certifications: false,
+    users: false,
   });
 
   const fetchJobs = async () => {
@@ -227,7 +232,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       if (profile?.role === 'freelancer') {
-        // Filter on client side if needed
         const filteredData = data.filter(exp => exp.freelancer_id === user.id);
         
         const formattedExperiences: Experience[] = filteredData.map(exp => ({
@@ -243,7 +247,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setExperiences(formattedExperiences);
       } else {
-        // For providers or other roles
         const formattedExperiences: Experience[] = data.map(exp => ({
           id: exp.id,
           title: exp.title,
@@ -276,7 +279,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       if (profile?.role === 'freelancer') {
-        // Filter on client side if needed
         const filteredData = data.filter(cert => cert.freelancer_id === user.id);
         
         const formattedCertifications: Certification[] = filteredData.map(cert => ({
@@ -291,7 +293,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         setCertifications(formattedCertifications);
       } else {
-        // For providers or other roles
         const formattedCertifications: Certification[] = data.map(cert => ({
           id: cert.id,
           name: cert.name,
@@ -311,6 +312,41 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchUsers = async () => {
+    if (!user) return;
+    
+    setIsLoading(prev => ({ ...prev, users: true }));
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) throw error;
+      
+      const formattedUsers: User[] = data.map(profile => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        profilePicture: profile.profile_picture,
+        bio: profile.bio,
+        skills: profile.skills,
+        createdAt: profile.created_at,
+        coverPicture: profile.cover_picture,
+        verified: profile.verified,
+        availableUntil: profile.available_until,
+        location: profile.location,
+        languages: profile.languages,
+      }));
+      
+      setUsers(formattedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, users: false }));
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchJobs();
@@ -319,6 +355,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetchNotifications();
       fetchExperiences();
       fetchCertifications();
+      fetchUsers();
     } else {
       fetchJobs();
       setApplications([]);
@@ -326,6 +363,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setNotifications([]);
       setExperiences([]);
       setCertifications([]);
+      setUsers([]);
     }
   }, [user]);
 
@@ -411,6 +449,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
       .subscribe();
 
+    const profilesChannel = supabase
+      .channel('profiles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+      }, () => {
+        fetchUsers();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(jobsChannel);
       supabase.removeChannel(applicationsChannel);
@@ -418,6 +467,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(experiencesChannel);
       supabase.removeChannel(certificationsChannel);
+      supabase.removeChannel(profilesChannel);
     };
   }, [user, profile]);
 
@@ -503,7 +553,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // If the job is being closed, notify applicants
       if (job.status === 'closed') {
         const { data: applicants, error: applicantsError } = await supabase
           .from('applications')
@@ -568,7 +617,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Notify applicants before deleting
       const { data: applicants, error: applicantsError } = await supabase
         .from('applications')
         .select('freelancer_id')
@@ -587,13 +635,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .insert(notifications);
       }
       
-      // Delete applications first to maintain referential integrity
       await supabase
         .from('applications')
         .delete()
         .eq('job_id', jobId);
       
-      // Now delete the job
       const { error } = await supabase
         .from('jobs')
         .delete()
@@ -1059,6 +1105,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshNotifications = fetchNotifications;
   const refreshExperiences = fetchExperiences;
   const refreshCertifications = fetchCertifications;
+  const refreshUsers = fetchUsers;
 
   return (
     <DataContext.Provider 
@@ -1069,6 +1116,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         notifications,
         experiences,
         certifications,
+        users,
         isLoading,
         createJob,
         updateJob,
@@ -1084,6 +1132,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshNotifications,
         refreshExperiences,
         refreshCertifications,
+        refreshUsers,
         addExperience,
         deleteExperience,
         addCertification,
