@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ImageUpload } from '@/components/ui/image-upload'; // Fixed import
+import { ImageUpload } from '@/components/ui/image-upload';
 import { useData } from '@/context/DataContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Project } from '@/types';
@@ -19,6 +20,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [technologies, setTechnologies] = useState('');
+  const [role, setRole] = useState('');
   const { addProject } = useData();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,6 +33,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
         title,
         description,
         images,
+        technologies: technologies ? technologies.split(',').map(tech => tech.trim()) : [],
+        role
       });
       toast({
         title: "Project added",
@@ -71,17 +76,41 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="technologies" className="text-right">
+              Technologies
+            </Label>
+            <Input 
+              id="technologies" 
+              value={technologies} 
+              onChange={(e) => setTechnologies(e.target.value)} 
+              placeholder="React, TypeScript, Node.js (comma separated)" 
+              className="col-span-3" 
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="role" className="text-right">
+              Your Role
+            </Label>
+            <Input 
+              id="role" 
+              value={role} 
+              onChange={(e) => setRole(e.target.value)} 
+              placeholder="Frontend Developer, UI Designer, etc." 
+              className="col-span-3" 
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="images" className="text-right">
               Images
             </Label>
             <div className="col-span-3">
-              <ImageUpload value={images} onChange={(urls) => setImages(urls)} />
+              <ImageUpload value={images} onChange={setImages} />
             </div>
           </div>
         </div>
         
         <div className="flex justify-end">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose} className="mr-2">
             Cancel
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>

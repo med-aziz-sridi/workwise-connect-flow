@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Job, Application, Project, Notification, CreateJobInput, Profile, Experience, Certification, JobStatus, ApplicationStatus, NotificationType, User } from '@/types';
+import { Job, Application, Project, Notification, CreateJobInput, Profile, Experience, Certification, JobStatus, ApplicationStatus, NotificationType, User, UserRole } from '@/types';
 import { toast as sonnerToast } from 'sonner';
 
 interface DataContextType {
@@ -327,7 +327,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: profile.id,
         name: profile.name,
         email: profile.email,
-        role: profile.role,
+        role: profile.role as UserRole,
         profilePicture: profile.profile_picture,
         bio: profile.bio,
         skills: profile.skills,
@@ -821,6 +821,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: projectData.description,
           images: projectData.images,
           freelancer_id: user.id,
+          technologies: projectData.technologies,
+          role: projectData.role,
         });
       
       if (error) throw error;
