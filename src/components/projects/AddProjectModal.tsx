@@ -55,6 +55,16 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
     }
   };
   
+  // Handler for the ImageUpload component
+  const handleImagesChange = (value: string | string[]) => {
+    // Ensure we're always setting an array for images
+    if (Array.isArray(value)) {
+      setImages(value);
+    } else {
+      setImages([value]);
+    }
+  };
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
@@ -104,7 +114,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose, onSu
               Images
             </Label>
             <div className="col-span-3">
-              <ImageUpload value={images} onChange={setImages} />
+              <ImageUpload value={images} onChange={handleImagesChange} />
             </div>
           </div>
         </div>

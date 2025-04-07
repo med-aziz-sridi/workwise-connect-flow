@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
@@ -327,7 +328,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: profile.id,
         name: profile.name,
         email: profile.email,
-        role: profile.role as UserRole,
+        role: profile.role as UserRole, // Cast to UserRole type
         profilePicture: profile.profile_picture,
         bio: profile.bio,
         skills: profile.skills,
@@ -335,8 +336,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         coverPicture: profile.cover_picture,
         verified: profile.verified,
         availableUntil: profile.available_until,
-        location: profile.location,
-        languages: profile.languages,
+        location: profile.location || undefined, // Handle potentially missing location
+        languages: profile.languages || undefined, // Handle potentially missing languages
       }));
       
       setUsers(formattedUsers);
