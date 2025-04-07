@@ -1,4 +1,3 @@
-
 export type UserRole = 'freelancer' | 'provider';
 
 // Session user information
@@ -114,6 +113,7 @@ export interface Message {
   content: string;
   read: boolean;
   createdAt: string;
+  conversationId?: string;
 }
 
 export interface Conversation {

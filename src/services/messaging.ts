@@ -86,6 +86,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     
     if (error) throw error;
     
+    // Breaking the circular reference by explicitly mapping to Message type
     return data.map(message => ({
       id: message.id,
       senderId: message.sender_id,
@@ -93,6 +94,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
+      conversationId: message.conversation_id
     }));
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -100,7 +102,12 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   }
 }
 
-export async function sendMessage(senderId: string, receiverId: string, content: string, conversationId: string): Promise<Message | null> {
+export async function sendMessage(
+  senderId: string,
+  receiverId: string,
+  content: string,
+  conversationId: string
+): Promise<Message | null> {
   try {
     // Create message
     const { data: message, error: messageError } = await supabase
@@ -129,6 +136,7 @@ export async function sendMessage(senderId: string, receiverId: string, content:
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
+      conversationId: message.conversation_id
     };
   } catch (error) {
     console.error('Error sending message:', error);

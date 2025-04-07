@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -93,6 +92,7 @@ const Conversation: React.FC = () => {
           content: newMsg.content,
           read: newMsg.read,
           createdAt: newMsg.created_at,
+          conversationId: newMsg.conversation_id
         }]);
         
         // Mark messages as read
@@ -107,7 +107,6 @@ const Conversation: React.FC = () => {
     };
   }, [user, conversationId, toast]);
 
-  // Scroll to bottom whenever messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
