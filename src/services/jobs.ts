@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -33,7 +32,7 @@ export function useJobsService(user: User | null, profile: Profile | null) {
         createdAt: job.created_at,
         status: (job.status as JobStatus) || 'open',
         coverImage: job.cover_image,
-        numberOfPeople: job.number_of_people
+        numberOfPeople: undefined
       }));
       
       setJobs(formattedJobs);

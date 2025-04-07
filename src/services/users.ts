@@ -30,8 +30,9 @@ export function useUsersService(user: User | null) {
         coverPicture: profile.cover_picture,
         verified: profile.verified,
         availableUntil: profile.available_until,
-        location: profile.location || undefined,
-        languages: profile.languages || undefined,
+        // Handle fields that may not exist in the database
+        location: undefined,
+        languages: undefined,
       }));
       
       setUsers(formattedUsers);

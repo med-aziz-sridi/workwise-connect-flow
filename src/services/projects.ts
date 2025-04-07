@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -33,8 +32,8 @@ export function useProjectsService(user: User | null, profile: Profile | null) {
         images: project.images || [],
         freelancerId: project.freelancer_id,
         createdAt: project.created_at,
-        technologies: project.technologies || [],
-        role: project.role || ''
+        technologies: [],
+        role: ''
       }));
       
       setProjects(formattedProjects);
