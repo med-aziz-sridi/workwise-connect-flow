@@ -139,7 +139,6 @@ export const useConversation = ({
         description: "There was a problem sending your message. Please try again.",
         variant: "destructive"
       });
-      throw error;
     } finally {
       setIsSending(false);
     }
