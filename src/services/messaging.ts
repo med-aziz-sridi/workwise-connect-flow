@@ -86,7 +86,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     
     if (error) throw error;
     
-    // Map database results to the Message type explicitly
+    // Explicitly map to Message type to avoid TypeScript circularity issues
     return data.map(message => ({
       id: message.id,
       senderId: message.sender_id,
@@ -129,7 +129,7 @@ export async function sendMessage(
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversationId);
     
-    // Explicitly map the database result to the Message type
+    // Explicitly map to Message type to avoid TypeScript circularity issues
     return {
       id: message.id,
       senderId: message.sender_id,
