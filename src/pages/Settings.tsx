@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -15,124 +14,114 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { Lock, Bell, UserCog, ArrowLeft, User, Eye, EyeOff } from 'lucide-react';
-
 const passwordSchema = z.object({
-  currentPassword: z.string().min(6, { message: 'Password must be at least 6 characters' }),
-  newPassword: z.string().min(6, { message: 'Password must be at least 6 characters' }),
-  confirmPassword: z.string().min(6, { message: 'Password must be at least 6 characters' }),
-}).refine((data) => data.newPassword === data.confirmPassword, {
+  currentPassword: z.string().min(6, {
+    message: 'Password must be at least 6 characters'
+  }),
+  newPassword: z.string().min(6, {
+    message: 'Password must be at least 6 characters'
+  }),
+  confirmPassword: z.string().min(6, {
+    message: 'Password must be at least 6 characters'
+  })
+}).refine(data => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ["confirmPassword"]
 });
-
 const profileSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email' }),
+  name: z.string().min(2, {
+    message: 'Name must be at least 2 characters'
+  }),
+  email: z.string().email({
+    message: 'Please enter a valid email'
+  })
 });
-
 const notificationSchema = z.object({
   emailNotifications: z.boolean(),
   applicationUpdates: z.boolean(),
   newMessages: z.boolean(),
-  marketingEmails: z.boolean(),
+  marketingEmails: z.boolean()
 });
-
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type NotificationFormValues = z.infer<typeof notificationSchema>;
-
 const Settings: React.FC = () => {
-  const { user, profile } = useAuth();
+  const {
+    user,
+    profile
+  } = useAuth();
   const [showPassword, setShowPassword] = useState({
     current: false,
     new: false,
     confirm: false
   });
-  
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: '',
       newPassword: '',
-      confirmPassword: '',
-    },
+      confirmPassword: ''
+    }
   });
-
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: profile?.name || '',
-      email: user?.email || '',
-    },
+      email: user?.email || ''
+    }
   });
-  
   const notificationForm = useForm<NotificationFormValues>({
     resolver: zodResolver(notificationSchema),
     defaultValues: {
       emailNotifications: true,
       applicationUpdates: true,
       newMessages: true,
-      marketingEmails: false,
-    },
+      marketingEmails: false
+    }
   });
-  
   const onPasswordSubmit = (data: PasswordFormValues) => {
     // In a real app, this would update the user's password
     console.log('Password update data:', data);
-    
+
     // Reset form
     passwordForm.reset({
       currentPassword: '',
       newPassword: '',
-      confirmPassword: '',
+      confirmPassword: ''
     });
-    
+
     // Show success message
     toast.success('Password updated successfully!');
   };
-
   const onProfileSubmit = (data: ProfileFormValues) => {
     // In a real app, this would update the profile
     console.log('Profile update data:', data);
     toast.success('Profile updated successfully!');
   };
-  
   const onNotificationSubmit = (data: NotificationFormValues) => {
     // In a real app, this would update notification preferences
     console.log('Notification settings:', data);
     toast.success('Notification preferences updated!');
   };
-
   const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
     setShowPassword(prev => ({
       ...prev,
       [field]: !prev[field]
     }));
   };
-  
   if (!user) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+    return <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
         <h1 className="text-2xl font-bold mb-4">You need to be logged in to view settings</h1>
         <Button asChild>
           <Link to="/login">Log In</Link>
         </Button>
-      </div>
-    );
+      </div>;
   }
-
   const getInitials = (name?: string) => {
     if (!name || typeof name !== "string" || name.trim().length === 0) return "U";
-    return name
-      .trim()
-      .split(' ')
-      .map(part => part[0] || '')
-      .join('')
-      .toUpperCase();
+    return name.trim().split(' ').map(part => part[0] || '').join('').toUpperCase();
   };
-  
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  return <div className="max-w-5xl px-4 sm:px-6 lg:px-8 py-12 mx-0">
       <div className="mb-8">
         <Button variant="ghost" size="sm" asChild className="mb-4">
           <Link to="/profile" className="flex items-center text-gray-600">
@@ -189,25 +178,19 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
 
-                  <FormField
-                    control={profileForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={profileForm.control} name="name" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Display Name</FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={profileForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={profileForm.control} name="email" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Email Address</FormLabel>
                         <FormControl>
                           <Input {...field} disabled />
@@ -215,9 +198,7 @@ const Settings: React.FC = () => {
                         <FormDescription>
                           Contact support to change your email address
                         </FormDescription>
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </CardContent>
                 <CardFooter>
                   <Button type="submit">Save Profile Changes</Button>
@@ -238,101 +219,50 @@ const Settings: React.FC = () => {
             <CardContent className="space-y-6">
               <Form {...passwordForm}>
                 <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                  <FormField
-                    control={passwordForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={passwordForm.control} name="currentPassword" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Current Password</FormLabel>
                         <div className="relative">
                           <FormControl>
-                            <Input 
-                              type={showPassword.current ? "text" : "password"} 
-                              placeholder="••••••••" 
-                              {...field} 
-                            />
+                            <Input type={showPassword.current ? "text" : "password"} placeholder="••••••••" {...field} />
                           </FormControl>
-                          <Button 
-                            type="button"
-                            variant="ghost" 
-                            size="sm"
-                            className="absolute right-1 top-1 h-8 w-8 p-0"
-                            onClick={() => togglePasswordVisibility('current')}
-                          >
-                            {showPassword.current ? 
-                              <EyeOff className="h-4 w-4" /> : 
-                              <Eye className="h-4 w-4" />
-                            }
+                          <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1 h-8 w-8 p-0" onClick={() => togglePasswordVisibility('current')}>
+                            {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={passwordForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={passwordForm.control} name="newPassword" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>New Password</FormLabel>
                         <div className="relative">
                           <FormControl>
-                            <Input 
-                              type={showPassword.new ? "text" : "password"} 
-                              placeholder="••••••••" 
-                              {...field} 
-                            />
+                            <Input type={showPassword.new ? "text" : "password"} placeholder="••••••••" {...field} />
                           </FormControl>
-                          <Button 
-                            type="button"
-                            variant="ghost" 
-                            size="sm"
-                            className="absolute right-1 top-1 h-8 w-8 p-0"
-                            onClick={() => togglePasswordVisibility('new')}
-                          >
-                            {showPassword.new ? 
-                              <EyeOff className="h-4 w-4" /> : 
-                              <Eye className="h-4 w-4" />
-                            }
+                          <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1 h-8 w-8 p-0" onClick={() => togglePasswordVisibility('new')}>
+                            {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={passwordForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
+                  <FormField control={passwordForm.control} name="confirmPassword" render={({
+                  field
+                }) => <FormItem>
                         <FormLabel>Confirm New Password</FormLabel>
                         <div className="relative">
                           <FormControl>
-                            <Input 
-                              type={showPassword.confirm ? "text" : "password"} 
-                              placeholder="••••••••" 
-                              {...field} 
-                            />
+                            <Input type={showPassword.confirm ? "text" : "password"} placeholder="••••••••" {...field} />
                           </FormControl>
-                          <Button 
-                            type="button"
-                            variant="ghost" 
-                            size="sm"
-                            className="absolute right-1 top-1 h-8 w-8 p-0"
-                            onClick={() => togglePasswordVisibility('confirm')}
-                          >
-                            {showPassword.confirm ? 
-                              <EyeOff className="h-4 w-4" /> : 
-                              <Eye className="h-4 w-4" />
-                            }
+                          <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1 h-8 w-8 p-0" onClick={() => togglePasswordVisibility('confirm')}>
+                            {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
                   <div className="pt-2">
                     <Button type="submit">Update Password</Button>
@@ -364,11 +294,9 @@ const Settings: React.FC = () => {
             <Form {...notificationForm}>
               <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)}>
                 <CardContent className="space-y-6">
-                  <FormField
-                    control={notificationForm.control}
-                    name="emailNotifications"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <FormField control={notificationForm.control} name="emailNotifications" render={({
+                  field
+                }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">Email Notifications</FormLabel>
                           <FormDescription>
@@ -376,20 +304,13 @@ const Settings: React.FC = () => {
                           </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={notificationForm.control}
-                    name="applicationUpdates"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <FormField control={notificationForm.control} name="applicationUpdates" render={({
+                  field
+                }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">Application Updates</FormLabel>
                           <FormDescription>
@@ -397,20 +318,13 @@ const Settings: React.FC = () => {
                           </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={notificationForm.control}
-                    name="newMessages"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <FormField control={notificationForm.control} name="newMessages" render={({
+                  field
+                }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">New Messages</FormLabel>
                           <FormDescription>
@@ -418,20 +332,13 @@ const Settings: React.FC = () => {
                           </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                   
-                  <FormField
-                    control={notificationForm.control}
-                    name="marketingEmails"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <FormField control={notificationForm.control} name="marketingEmails" render={({
+                  field
+                }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">Marketing Emails</FormLabel>
                           <FormDescription>
@@ -439,14 +346,9 @@ const Settings: React.FC = () => {
                           </FormDescription>
                         </div>
                         <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                      </FormItem>} />
                 </CardContent>
                 
                 <CardFooter>
@@ -457,8 +359,6 @@ const Settings: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
-
 export default Settings;
