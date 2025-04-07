@@ -75,33 +75,37 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
   }
 }
 
+// Define a type to match the database structure for messages
+type MessageRow = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  read: boolean;
+  created_at: string;
+  // Note: conversation_id is in the database but not returned in our explicit select
+};
+
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
-    // Get messages for the conversation
+    // Get messages for the conversation with explicit column selection
     const { data, error } = await supabase
       .from('messages')
-      .select(`
-        id,
-        sender_id,
-        receiver_id,
-        content,
-        read,
-        created_at
-      `)
+      .select('id, sender_id, receiver_id, content, read, created_at')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
     
     if (error) throw error;
     
-    // Manually map database results to our Message interface
-    return data.map(message => ({
+    // Explicitly map database results to our Message interface
+    return (data as MessageRow[]).map(message => ({
       id: message.id,
       senderId: message.sender_id,
       receiverId: message.receiver_id,
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId: conversationId
+      conversationId: conversationId // Add this explicitly since we know it from the parameter
     }));
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -125,14 +129,7 @@ export async function sendMessage(
         content,
         conversation_id: conversationId
       })
-      .select(`
-        id,
-        sender_id,
-        receiver_id,
-        content,
-        read,
-        created_at
-      `)
+      .select('id, sender_id, receiver_id, content, read, created_at')
       .single();
     
     if (messageError) throw messageError;
@@ -143,7 +140,7 @@ export async function sendMessage(
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversationId);
     
-    // Manually map database result to our Message interface
+    // Explicitly map database result to our Message interface
     return {
       id: message.id,
       senderId: message.sender_id,
@@ -151,7 +148,7 @@ export async function sendMessage(
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId: conversationId
+      conversationId: conversationId // Add this explicitly
     };
   } catch (error) {
     console.error('Error sending message:', error);
