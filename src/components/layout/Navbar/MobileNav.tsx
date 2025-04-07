@@ -91,16 +91,19 @@ const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
                 </Link>
               </Button>
               
-              <Button 
-                variant="ghost" 
-                asChild 
-                onClick={onClose}
-                className={cn("justify-start", isActivePath('/jobs') ? "bg-accent" : "")}
-              >
-                <Link to="/jobs">
-                  Find Jobs
-                </Link>
-              </Button>
+              {/* Only show Find Jobs for freelancers */}
+              {profile.role === 'freelancer' && (
+                <Button 
+                  variant="ghost" 
+                  asChild 
+                  onClick={onClose}
+                  className={cn("justify-start", isActivePath('/jobs') ? "bg-accent" : "")}
+                >
+                  <Link to="/jobs">
+                    Find Jobs
+                  </Link>
+                </Button>
+              )}
               
               {profile.role === 'freelancer' && (
                 <Button 

@@ -77,20 +77,11 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
-    // Get participants for permission check
-    const { data: conversation, error: convError } = await supabase
-      .from('conversations')
-      .select('participant1_id, participant2_id')
-      .eq('id', conversationId)
-      .single();
-    
-    if (convError) throw convError;
-    
-    // Get messages between these participants
+    // Get messages for the conversation
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .or(`and(sender_id.eq.${conversation.participant1_id},receiver_id.eq.${conversation.participant2_id}),and(sender_id.eq.${conversation.participant2_id},receiver_id.eq.${conversation.participant1_id})`)
+      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
     
     if (error) throw error;
@@ -109,7 +100,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   }
 }
 
-export async function sendMessage(senderId: string, receiverId: string, content: string): Promise<Message | null> {
+export async function sendMessage(senderId: string, receiverId: string, content: string, conversationId: string): Promise<Message | null> {
   try {
     // Create message
     const { data: message, error: messageError } = await supabase
@@ -118,20 +109,18 @@ export async function sendMessage(senderId: string, receiverId: string, content:
         sender_id: senderId,
         receiver_id: receiverId,
         content,
+        conversation_id: conversationId
       })
       .select()
       .single();
     
     if (messageError) throw messageError;
     
-    // Update conversation's last_message_at timestamp or create new conversation if needed
-    await getOrCreateConversation(senderId, receiverId);
-    
-    // Update existing conversation's timestamp
+    // Update conversation's last_message_at timestamp
     await supabase
       .from('conversations')
       .update({ last_message_at: new Date().toISOString() })
-      .or(`and(participant1_id.eq.${senderId},participant2_id.eq.${receiverId}),and(participant1_id.eq.${receiverId},participant2_id.eq.${senderId})`);
+      .eq('id', conversationId);
     
     return {
       id: message.id,
@@ -149,22 +138,11 @@ export async function sendMessage(senderId: string, receiverId: string, content:
 
 export async function markMessagesAsRead(userId: string, conversationId: string): Promise<void> {
   try {
-    // Get other participant id
-    const { data: conversation, error: convError } = await supabase
-      .from('conversations')
-      .select('participant1_id, participant2_id')
-      .eq('id', conversationId)
-      .single();
-    
-    if (convError) throw convError;
-    
-    const otherParticipantId = conversation.participant1_id === userId ? conversation.participant2_id : conversation.participant1_id;
-    
-    // Mark messages from the other participant as read
+    // Mark messages from other participants as read
     await supabase
       .from('messages')
       .update({ read: true })
-      .eq('sender_id', otherParticipantId)
+      .eq('conversation_id', conversationId)
       .eq('receiver_id', userId)
       .eq('read', false);
   } catch (error) {

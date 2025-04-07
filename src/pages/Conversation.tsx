@@ -11,10 +11,12 @@ import { getMessages, sendMessage, markMessagesAsRead } from '@/services/messagi
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 const Conversation: React.FC = () => {
   const { id: conversationId } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [receiverId, setReceiverId] = useState<string | null>(null);
@@ -61,6 +63,11 @@ const Conversation: React.FC = () => {
         await markMessagesAsRead(user.id, conversationId);
       } catch (error) {
         console.error('Error fetching conversation data:', error);
+        toast({
+          title: "Error loading conversation",
+          description: "There was a problem loading the messages. Please try again later.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +82,7 @@ const Conversation: React.FC = () => {
         event: 'INSERT',
         schema: 'public',
         table: 'messages',
-        filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${user.id}))`,
+        filter: `conversation_id.eq.${conversationId}`,
       }, (payload) => {
         const newMsg = payload.new as any;
         
@@ -98,7 +105,7 @@ const Conversation: React.FC = () => {
     return () => {
       supabase.removeChannel(messagesChannel);
     };
-  }, [user, conversationId, receiverId]);
+  }, [user, conversationId, toast]);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -108,14 +115,29 @@ const Conversation: React.FC = () => {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !receiverId || !newMessage.trim()) return;
+    if (!user || !receiverId || !newMessage.trim() || !conversationId) {
+      toast({
+        title: "Cannot send message",
+        description: "Make sure you enter a message and try again.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsSending(true);
     try {
-      await sendMessage(user.id, receiverId, newMessage.trim());
+      const sentMessage = await sendMessage(user.id, receiverId, newMessage.trim(), conversationId);
+      if (!sentMessage) {
+        throw new Error("Failed to send message");
+      }
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
+      toast({
+        title: "Message not sent",
+        description: "There was a problem sending your message. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSending(false);
     }
@@ -132,81 +154,83 @@ const Conversation: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center items-center min-h-[60vh]">
+      <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <Button variant="ghost" size="sm" asChild className="mb-4">
-        <Link to="/messages" className="flex items-center text-gray-600">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Messages
-        </Link>
-      </Button>
+    <div className="w-full min-h-[calc(100vh-64px)] bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Button variant="ghost" size="sm" asChild className="mb-4">
+          <Link to="/messages" className="flex items-center text-gray-600">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Messages
+          </Link>
+        </Button>
 
-      <Card className="h-[calc(100vh-12rem)]">
-        <CardHeader className="border-b py-3">
-          <div className="flex items-center">
-            <Avatar className="h-10 w-10 mr-3">
-              <AvatarImage src={receiverPicture || undefined} alt={receiverName || 'User'} />
-              <AvatarFallback>{getInitials(receiverName)}</AvatarFallback>
-            </Avatar>
-            <CardTitle className="text-lg">{receiverName || 'User'}</CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="p-0 flex flex-col h-full">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length > 0 ? (
-              messages.map((message) => {
-                const isOwn = message.senderId === user?.id;
-                
-                return (
-                  <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`
-                      max-w-[70%] rounded-lg px-4 py-2 
-                      ${isOwn ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}
-                    `}>
-                      <p className="break-words">{message.content}</p>
-                      <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {format(new Date(message.createdAt), 'h:mm a')}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="h-full flex items-center justify-center">
-                <p className="text-gray-500 text-center">
-                  No messages yet. Start the conversation!
-                </p>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+        <Card className="shadow-md h-[calc(100vh-140px)]">
+          <CardHeader className="border-b py-3 px-4">
+            <div className="flex items-center">
+              <Avatar className="h-10 w-10 mr-3">
+                <AvatarImage src={receiverPicture || undefined} alt={receiverName || 'User'} />
+                <AvatarFallback>{getInitials(receiverName)}</AvatarFallback>
+              </Avatar>
+              <CardTitle className="text-lg">{receiverName || 'User'}</CardTitle>
+            </div>
+          </CardHeader>
           
-          <div className="border-t p-3 mt-auto">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1"
-                disabled={isSending}
-              />
-              <Button type="submit" size="icon" disabled={!newMessage.trim() || isSending}>
-                {isSending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </form>
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent className="p-0 flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.length > 0 ? (
+                messages.map((message) => {
+                  const isOwn = message.senderId === user?.id;
+                  
+                  return (
+                    <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`
+                        max-w-[70%] rounded-lg px-4 py-2 
+                        ${isOwn ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}
+                      `}>
+                        <p className="break-words">{message.content}</p>
+                        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>
+                          {format(new Date(message.createdAt), 'h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-gray-500 text-center">
+                    No messages yet. Start the conversation!
+                  </p>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            
+            <div className="border-t p-3 mt-auto">
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1"
+                  disabled={isSending}
+                />
+                <Button type="submit" size="icon" disabled={!newMessage.trim() || isSending}>
+                  {isSending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

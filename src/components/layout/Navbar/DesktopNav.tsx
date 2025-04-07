@@ -39,13 +39,16 @@ const DesktopNav: React.FC = () => {
         </Link>
       </Button>
       
-      <Button 
-        variant="ghost" 
-        asChild
-        className={cn(isActivePath('/jobs') ? "bg-accent" : "")}
-      >
-        <Link to="/jobs">Find Jobs</Link>
-      </Button>
+      {/* Only show Find Jobs for freelancers */}
+      {profile?.role === 'freelancer' && (
+        <Button 
+          variant="ghost" 
+          asChild
+          className={cn(isActivePath('/jobs') ? "bg-accent" : "")}
+        >
+          <Link to="/jobs">Find Jobs</Link>
+        </Button>
+      )}
       
       {profile?.role === 'freelancer' && (
         <Button 
@@ -67,15 +70,17 @@ const DesktopNav: React.FC = () => {
         </Button>
       )}
       
-      <Link to="/messages" className="relative">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className={cn(isActivePath('/messages') ? "bg-accent" : "")}
-        >
-          <MessageSquare className="h-5 w-5" />
-        </Button>
-      </Link>
+      {/* Messages button for both roles */}
+      <Button 
+        variant="ghost" 
+        asChild
+        className={cn(isActivePath('/messages') ? "bg-accent" : "")}
+      >
+        <Link to="/messages">
+          <MessageSquare className="h-5 w-5 mr-2" />
+          Messages
+        </Link>
+      </Button>
       
       <Link to="/notifications" className="relative">
         <Button 
