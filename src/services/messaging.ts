@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation, Message } from '@/types';
 
@@ -42,7 +41,6 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
 export async function getOrCreateConversation(userId: string, otherUserId: string, jobId?: string): Promise<string | null> {
   try {
-    // Check if conversation already exists
     const { data: existingConversation, error: queryError } = await supabase
       .from('conversations')
       .select('id')
@@ -55,7 +53,6 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
       return existingConversation.id;
     }
     
-    // Create new conversation
     const { data: newConversation, error: insertError } = await supabase
       .from('conversations')
       .insert({
@@ -75,7 +72,6 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
   }
 }
 
-// Define a type to match the database structure for messages
 type MessageRow = {
   id: string;
   sender_id: string;
@@ -83,12 +79,10 @@ type MessageRow = {
   content: string;
   read: boolean;
   created_at: string;
-  // Note: conversation_id is in the database but not returned in our explicit select
 };
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
-    // Get messages for the conversation with explicit column selection
     const { data, error } = await supabase
       .from('messages')
       .select('id, sender_id, receiver_id, content, read, created_at')
@@ -97,15 +91,14 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     
     if (error) throw error;
     
-    // Explicitly map database results to our Message interface
-    return (data as MessageRow[]).map(message => ({
+    return (data || []).map((message: MessageRow) => ({
       id: message.id,
       senderId: message.sender_id,
       receiverId: message.receiver_id,
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId: conversationId // Add this explicitly since we know it from the parameter
+      conversationId
     }));
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -120,7 +113,6 @@ export async function sendMessage(
   conversationId: string
 ): Promise<Message | null> {
   try {
-    // Create message
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .insert({
@@ -134,13 +126,11 @@ export async function sendMessage(
     
     if (messageError) throw messageError;
     
-    // Update conversation's last_message_at timestamp
     await supabase
       .from('conversations')
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversationId);
     
-    // Explicitly map database result to our Message interface
     return {
       id: message.id,
       senderId: message.sender_id,
@@ -148,7 +138,7 @@ export async function sendMessage(
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId: conversationId // Add this explicitly
+      conversationId
     };
   } catch (error) {
     console.error('Error sending message:', error);
@@ -158,7 +148,6 @@ export async function sendMessage(
 
 export async function markMessagesAsRead(userId: string, conversationId: string): Promise<void> {
   try {
-    // Mark messages from other participants as read
     await supabase
       .from('messages')
       .update({ read: true })
