@@ -77,7 +77,7 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
-    // Get messages for the conversation
+    // Add conversation_id field to messages when retrieving them
     const { data, error } = await supabase
       .from('messages')
       .select('*')
@@ -86,7 +86,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     
     if (error) throw error;
     
-    // Explicitly map to Message type to avoid TypeScript circularity issues
+    // Map database results to Message interface, adding the conversationId
     return data.map(message => ({
       id: message.id,
       senderId: message.sender_id,
@@ -94,7 +94,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId: message.conversation_id
+      conversationId: conversationId
     }));
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -109,7 +109,7 @@ export async function sendMessage(
   conversationId: string
 ): Promise<Message | null> {
   try {
-    // Create message
+    // Create message with conversation_id field
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .insert({
@@ -129,7 +129,7 @@ export async function sendMessage(
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversationId);
     
-    // Explicitly map to Message type to avoid TypeScript circularity issues
+    // Map database result to Message interface, adding the conversationId
     return {
       id: message.id,
       senderId: message.sender_id,
@@ -137,7 +137,7 @@ export async function sendMessage(
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId: message.conversation_id
+      conversationId: conversationId
     };
   } catch (error) {
     console.error('Error sending message:', error);
