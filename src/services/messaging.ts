@@ -77,16 +77,23 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
-    // Add conversation_id field to messages when retrieving them
+    // Get messages for the conversation
     const { data, error } = await supabase
       .from('messages')
-      .select('*')
+      .select(`
+        id,
+        sender_id,
+        receiver_id,
+        content,
+        read,
+        created_at
+      `)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
     
     if (error) throw error;
     
-    // Map database results to Message interface, adding the conversationId
+    // Manually map database results to our Message interface
     return data.map(message => ({
       id: message.id,
       senderId: message.sender_id,
@@ -109,7 +116,7 @@ export async function sendMessage(
   conversationId: string
 ): Promise<Message | null> {
   try {
-    // Create message with conversation_id field
+    // Create message
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .insert({
@@ -118,7 +125,14 @@ export async function sendMessage(
         content,
         conversation_id: conversationId
       })
-      .select()
+      .select(`
+        id,
+        sender_id,
+        receiver_id,
+        content,
+        read,
+        created_at
+      `)
       .single();
     
     if (messageError) throw messageError;
@@ -129,7 +143,7 @@ export async function sendMessage(
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversationId);
     
-    // Map database result to Message interface, adding the conversationId
+    // Manually map database result to our Message interface
     return {
       id: message.id,
       senderId: message.sender_id,
