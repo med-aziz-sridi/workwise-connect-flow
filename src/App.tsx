@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,6 +34,7 @@ import Messages from "./pages/Messages";
 import Conversation from "./pages/Conversation";
 import WorkingFreelancers from "./pages/provider/WorkingFreelancers";
 import ProjectChecklist from "./pages/ProjectChecklist";
+import ProjectWhiteboard from "./pages/ProjectWhiteboard";
 import ProjectChat from "./pages/ProjectChat";
 
 const queryClient = new QueryClient();
@@ -191,8 +193,9 @@ function App() {
                     } 
                   />
                   
-                  {/* New Project Routes */}
+                  {/* Project Routes */}
                   <Route path="/project/:id/checklist" element={<ProjectChecklist />} />
+                  <Route path="/project/:id/whiteboard" element={<ProjectWhiteboard />} />
                   <Route path="/project/:id/chat" element={<ProjectChat />} />
                   
                   <Route path="*" element={<NotFound />} />
