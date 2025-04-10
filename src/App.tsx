@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,170 +32,178 @@ import RoleRoute from "./components/auth/RoleRoute";
 import Messages from "./pages/Messages";
 import Conversation from "./pages/Conversation";
 import WorkingFreelancers from "./pages/provider/WorkingFreelancers";
+import ProjectChecklist from "./pages/ProjectChecklist";
+import ProjectChat from "./pages/ProjectChat";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <DataProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Layout>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/jobs" element={<Jobs />} />
-                <Route path="/jobs/:id" element={<JobDetail />} />
-                
-                {/* Redirect based on role */}
-                <Route path="/" element={<Home />} />
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <PrivateRoute>
-                      {(user, profile) => 
-                        profile.role === 'freelancer' 
-                          ? <Navigate to="/freelancer/dashboard" replace /> 
-                          : <Navigate to="/provider/dashboard" replace />
-                      }
-                    </PrivateRoute>
-                  } 
-                />
-                
-                {/* Freelancer routes */}
-                <Route 
-                  path="/freelancer/dashboard" 
-                  element={
-                    <RoleRoute role="freelancer">
-                      <FreelancerDashboard />
-                    </RoleRoute>
-                  } 
-                />
-                <Route 
-                  path="/applications" 
-                  element={
-                    <RoleRoute role="freelancer">
-                      <Applications />
-                    </RoleRoute>
-                  } 
-                />
-                <Route 
-                  path="/add-project" 
-                  element={
-                    <RoleRoute role="freelancer">
-                      <AddProject />
-                    </RoleRoute>
-                  } 
-                />
-                
-                {/* Provider routes */}
-                <Route 
-                  path="/provider/dashboard" 
-                  element={
-                    <RoleRoute role="provider">
-                      <ProviderDashboard />
-                    </RoleRoute>
-                  } 
-                />
-                <Route 
-                  path="/post-job" 
-                  element={
-                    <RoleRoute role="provider">
-                      <PostJob />
-                    </RoleRoute>
-                  } 
-                />
-                <Route 
-                  path="/my-jobs" 
-                  element={
-                    <RoleRoute role="provider">
-                      <MyJobs />
-                    </RoleRoute>
-                  } 
-                />
-                <Route 
-                  path="/working-freelancers" 
-                  element={
-                    <RoleRoute role="provider">
-                      <WorkingFreelancers />
-                    </RoleRoute>
-                  } 
-                />
-                <Route 
-                  path="/jobs/:id/applicants" 
-                  element={
-                    <RoleRoute role="provider">
-                      <JobApplicants />
-                    </RoleRoute>
-                  } 
-                />
-                <Route 
-                  path="/applicants/:id" 
-                  element={
-                    <RoleRoute role="provider">
-                      <ApplicantProfile />
-                    </RoleRoute>
-                  } 
-                />
-                
-                {/* Common authenticated routes */}
-                <Route 
-                  path="/profile" 
-                  element={
-                    <PrivateRoute>
-                      <Profile />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/settings" 
-                  element={
-                    <PrivateRoute>
-                      <Settings />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/notifications" 
-                  element={
-                    <PrivateRoute>
-                      <Notifications />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/messages" 
-                  element={
-                    <PrivateRoute>
-                      <Messages />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/messages/:id" 
-                  element={
-                    <PrivateRoute>
-                      <Conversation />
-                    </PrivateRoute>
-                  } 
-                />
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
-          </BrowserRouter>
-        </TooltipProvider>
-      </DataProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <DataProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Layout>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/jobs" element={<Jobs />} />
+                  <Route path="/jobs/:id" element={<JobDetail />} />
+                  
+                  {/* Redirect based on role */}
+                  <Route path="/" element={<Home />} />
+                  <Route 
+                    path="/dashboard" 
+                    element={
+                      <PrivateRoute>
+                        {(user, profile) => 
+                          profile.role === 'freelancer' 
+                            ? <Navigate to="/freelancer/dashboard" replace /> 
+                            : <Navigate to="/provider/dashboard" replace />
+                        }
+                      </PrivateRoute>
+                    } 
+                  />
+                  
+                  {/* Freelancer routes */}
+                  <Route 
+                    path="/freelancer/dashboard" 
+                    element={
+                      <RoleRoute role="freelancer">
+                        <FreelancerDashboard />
+                      </RoleRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/applications" 
+                    element={
+                      <RoleRoute role="freelancer">
+                        <Applications />
+                      </RoleRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/add-project" 
+                    element={
+                      <RoleRoute role="freelancer">
+                        <AddProject />
+                      </RoleRoute>
+                    } 
+                  />
+                  
+                  {/* Provider routes */}
+                  <Route 
+                    path="/provider/dashboard" 
+                    element={
+                      <RoleRoute role="provider">
+                        <ProviderDashboard />
+                      </RoleRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/post-job" 
+                    element={
+                      <RoleRoute role="provider">
+                        <PostJob />
+                      </RoleRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/my-jobs" 
+                    element={
+                      <RoleRoute role="provider">
+                        <MyJobs />
+                      </RoleRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/working-freelancers" 
+                    element={
+                      <RoleRoute role="provider">
+                        <WorkingFreelancers />
+                      </RoleRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/jobs/:id/applicants" 
+                    element={
+                      <RoleRoute role="provider">
+                        <JobApplicants />
+                      </RoleRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/applicants/:id" 
+                    element={
+                      <RoleRoute role="provider">
+                        <ApplicantProfile />
+                      </RoleRoute>
+                    } 
+                  />
+                  
+                  {/* Common authenticated routes */}
+                  <Route 
+                    path="/profile" 
+                    element={
+                      <PrivateRoute>
+                        <Profile />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/settings" 
+                    element={
+                      <PrivateRoute>
+                        <Settings />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/notifications" 
+                    element={
+                      <PrivateRoute>
+                        <Notifications />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/messages" 
+                    element={
+                      <PrivateRoute>
+                        <Messages />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/messages/:id" 
+                    element={
+                      <PrivateRoute>
+                        <Conversation />
+                      </PrivateRoute>
+                    } 
+                  />
+                  
+                  {/* New Project Routes */}
+                  <Route path="/project/:id/checklist" element={<ProjectChecklist />} />
+                  <Route path="/project/:id/chat" element={<ProjectChat />} />
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Layout>
+            </BrowserRouter>
+          </TooltipProvider>
+        </DataProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -10,13 +11,14 @@ import JobCard from '@/components/jobs/JobCard';
 import { AvailabilityBadge } from '@/components/ui/availability-badge';
 import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
 import { CollaborativeChecklist } from '@/components/dashboard/CollaborativeChecklist';
+import { CurrentProjectsSection } from '@/components/projects/CurrentProjectsSection';
+import { MatchingJobsSection } from '@/components/dashboard/MatchingJobsSection';
 
 interface ChecklistItems {
   [key: string]: Array<{
     id: string;
     text: string;
     completed: boolean;
-
   }>;
 }
 
@@ -37,11 +39,13 @@ const FreelancerDashboard: React.FC = () => {
   // Data processing
   const userSkills = user.skills || [];
   const userApplications = applications.filter(app => app.freelancerId === user.id);
-  const currentJobs = userApplications
-    .filter(app => app.status === 'accepted')
+  
+  // Get active projects (jobs with accepted applications)
+  const currentProjects = applications
+    .filter(app => app.freelancerId === user.id && app.status === 'accepted')
     .map(app => {
       const job = jobs.find(j => j.id === app.jobId);
-      return job ? { ...job, applicationId: app.id ,
+      return job ? { ...job, applicationId: app.id,
         deadline: job.deadline || new Date(Date.now() + 604800000).toISOString() 
       } : null;
     })
@@ -50,6 +54,15 @@ const FreelancerDashboard: React.FC = () => {
   const handleChecklistUpdate = (jobId: string, items: any[]) => {
     setChecklists(prev => ({ ...prev, [jobId]: items }));
   };
+
+  // Get matching jobs based on user skills
+  const matchingJobs = jobs
+    .filter(job => 
+      job.status === 'open' && 
+      !userApplications.some(app => app.jobId === job.id) &&
+      job.skills.some(skill => userSkills.includes(skill))
+    )
+    .slice(0, 3);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -65,62 +78,15 @@ const FreelancerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Current Jobs Section */}
-      {currentJobs.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Current Projects</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {currentJobs.map((job) => (
-              <Card key={job.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{job.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {job.providerName}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-sm text-gray-600">
-                      <div className="flex items-center gap-1 mb-2">
-                        <DollarSign className="h-4 w-4" />
-                        Budget: ${job.budget.toLocaleString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Deadline: {new Date(job.deadline).toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <h3 className="font-medium mb-2">Project Checklist</h3>
-                      <CollaborativeChecklist
-                        items={checklists[job.id] || []}
-                        onUpdate={(items) => handleChecklistUpdate(job.id, items)}
-                      />
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button asChild variant="outline" className="flex-1 gap-1">
-                        <Link to={`/messages/${job.providerId}`}>
-                          <MessageSquare className="h-4 w-4" />
-                          Message
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" className="gap-1">
-                        <Link to={`/jobs/${job.id}`}>
-                          <Briefcase className="h-4 w-4" />
-                          Details
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Current Projects Section */}
+      <div className="mb-8">
+        <CurrentProjectsSection 
+          currentProjects={currentProjects}
+          applications={applications}
+          userId={user.id}
+          userRole="freelancer"
+        />
+      </div>
 
       {/* Stats Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -197,22 +163,7 @@ const FreelancerDashboard: React.FC = () => {
       {/* Jobs & Notifications Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Suggested Jobs</CardTitle>
-                <CardDescription>Based on your skills</CardDescription>
-              </div>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/jobs">Browse Jobs</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {jobs.filter(job => job.status === 'open').slice(0, 3).map(job => (
-                <JobCard key={job.id} job={job} />
-              ))}
-            </CardContent>
-          </Card>
+          <MatchingJobsSection jobs={matchingJobs} />
         </div>
 
         <div>

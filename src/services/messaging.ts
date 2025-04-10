@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation, Message } from '@/types';
 
@@ -85,6 +86,7 @@ interface MessageRow {
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
+    // Explicitly selecting all needed fields to avoid type inference issues
     const { data, error } = await supabase
       .from('messages')
       .select('id, sender_id, receiver_id, content, read, created_at, conversation_id')
@@ -93,7 +95,8 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     
     if (error) throw error;
     
-    return (data || []).map((message: MessageRow) => ({
+    // Using type assertion to ensure TypeScript knows what type the data is
+    return (data as MessageRow[] || []).map((message: MessageRow) => ({
       id: message.id,
       senderId: message.sender_id,
       receiverId: message.receiver_id,
@@ -123,7 +126,7 @@ export async function sendMessage(
         content,
         conversation_id: conversationId
       })
-      .select('id, sender_id, receiver_id, content, read, created_at')
+      .select('id, sender_id, receiver_id, content, read, created_at, conversation_id')
       .single();
     
     if (messageError) throw messageError;
@@ -140,7 +143,7 @@ export async function sendMessage(
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId
+      conversationId: message.conversation_id
     } : null;
   } catch (error) {
     console.error('Error sending message:', error);

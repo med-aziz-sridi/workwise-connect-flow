@@ -10,6 +10,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line, Legend, AreaChart, Area } from 'recharts';
 import { formatDistanceToNow } from 'date-fns';
 import { Plus, Users, Briefcase, Clock, DollarSign, TrendingUp, Activity } from 'lucide-react';
+import { CurrentProjectsSection } from '@/components/projects/CurrentProjectsSection';
 
 const ProviderDashboard = () => {
   const { user } = useAuth();
@@ -30,6 +31,11 @@ const ProviderDashboard = () => {
   // Get applications for this provider's jobs
   const myApplications = applications.filter(app => 
     myJobs.some(job => job.id === app.jobId)
+  );
+  
+  // Get active projects (jobs with accepted applications)
+  const currentProjects = myJobs.filter(job => 
+    applications.some(app => app.jobId === job.id && app.status === 'accepted')
   );
   
   // Stats
@@ -79,6 +85,16 @@ const ProviderDashboard = () => {
             </Link>
           </Button>
         </div>
+      </div>
+      
+      {/* Current Projects Section */}
+      <div className="mb-8">
+        <CurrentProjectsSection 
+          currentProjects={currentProjects}
+          applications={applications}
+          userId={user.id}
+          userRole="provider"
+        />
       </div>
       
       {/* Stats Overview */}
@@ -273,7 +289,7 @@ const ProviderDashboard = () => {
         </Card>
       </div>
       
-      {/* Budget and Spending Chart (moved below) */}
+      {/* Budget and Spending Chart */}
       <Card className="mb-8 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Budget & Spending Tracker</CardTitle>
@@ -339,7 +355,7 @@ const ProviderDashboard = () => {
         </CardContent>
       </Card>
       
-      {/* Applications Chart moved below */}
+      {/* Applications Chart */}
       <Card className="mb-8 shadow-sm">
         <CardHeader>
           <CardTitle>Applications per Job</CardTitle>
