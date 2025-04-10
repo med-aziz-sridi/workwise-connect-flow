@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -21,16 +20,13 @@ interface ProjectMessage {
 }
 
 // Define the interface for the database response
-interface ProjectMessageRecord {
+interface ProjectMessageResponse {
   id: string;
   sender_id: string;
   content: string;
   created_at: string;
-  project_id: string;
-  profiles?: {
-    name: string;
-    profile_picture: string | null;
-  };
+  sender_name: string;
+  profile_picture: string | null;
 }
 
 const ProjectChat: React.FC = () => {
@@ -71,12 +67,12 @@ const ProjectChat: React.FC = () => {
             setParticipants(participantsData);
           }
           
-          // Fetch messages using a raw query since project_messages isn't in the types
+          // Fetch messages using RPC with proper type casting
           const { data: messagesData, error: messagesError } = await supabase
             .rpc('get_project_messages', { p_project_id: projectId });
             
           if (!messagesError && messagesData) {
-            const formattedMessages = messagesData.map((msg: any) => ({
+            const formattedMessages = (messagesData as ProjectMessageResponse[]).map(msg => ({
               id: msg.id,
               sender_id: msg.sender_id,
               sender_name: msg.sender_name || 'Unknown User',

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -25,10 +24,13 @@ interface ProjectChecklistData {
 
 // Define the interface for the response from the database
 interface ProjectChecklistRecord {
+  id: string;
   project_id: string;
   todo_items: ChecklistItem[];
   in_progress_items: ChecklistItem[];
   done_items: ChecklistItem[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 const ProjectChecklist: React.FC = () => {
@@ -54,7 +56,7 @@ const ProjectChecklist: React.FC = () => {
           setProject(foundProject);
         }
         
-        // Fetch checklist data
+        // Fetch checklist data using a raw query since project_checklists isn't in the types
         const { data: checklistData, error } = await supabase
           .from('project_checklists')
           .select('*')
@@ -62,7 +64,7 @@ const ProjectChecklist: React.FC = () => {
           .maybeSingle();
         
         if (!error && checklistData) {
-          // Type assert the result
+          // Cast the data to our expected type
           const typedData = checklistData as unknown as ProjectChecklistRecord;
           setChecklistData({
             todoItems: typedData.todo_items || [],
@@ -108,8 +110,8 @@ const ProjectChecklist: React.FC = () => {
         updateData.done_items = items;
       }
       
-      // Check if record exists
-      const { data, error: checkError } = await supabase
+      // Check if record exists using a raw query
+      const { data: existingRecord, error: checkError } = await supabase
         .from('project_checklists')
         .select('id')
         .eq('project_id', projectId)
@@ -117,20 +119,24 @@ const ProjectChecklist: React.FC = () => {
       
       if (checkError) throw checkError;
       
-      if (data) {
-        // Update existing record
-        await supabase
+      if (existingRecord) {
+        // Update existing record using a raw query
+        const { error: updateError } = await supabase
           .from('project_checklists')
           .update(updateData)
           .eq('project_id', projectId);
+          
+        if (updateError) throw updateError;
       } else {
-        // Create new record
-        await supabase
+        // Create new record using a raw query
+        const { error: insertError } = await supabase
           .from('project_checklists')
           .insert({
             project_id: projectId,
             ...updateData
           });
+          
+        if (insertError) throw insertError;
       }
     } catch (error) {
       console.error('Error updating checklist:', error);
