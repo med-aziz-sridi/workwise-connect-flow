@@ -1,8 +1,9 @@
+
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Briefcase } from "lucide-react";
-import { JobCard } from "@/components/jobs/JobCard";
+import JobCard from "@/components/jobs/JobCard";
 
 interface MatchingJobsSectionProps {
   jobs: any[];

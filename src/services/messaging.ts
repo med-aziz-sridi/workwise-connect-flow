@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation, Message } from '@/types';
 
@@ -72,14 +73,15 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
   }
 }
 
-type MessageRow = {
+// Define the shape of the message data returned from the database
+interface MessageRow {
   id: string;
   sender_id: string;
   receiver_id: string;
   content: string;
   read: boolean;
   created_at: string;
-};
+}
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
@@ -131,7 +133,7 @@ export async function sendMessage(
       .update({ last_message_at: new Date().toISOString() })
       .eq('id', conversationId);
     
-    return {
+    return message ? {
       id: message.id,
       senderId: message.sender_id,
       receiverId: message.receiver_id,
@@ -139,7 +141,7 @@ export async function sendMessage(
       read: message.read,
       createdAt: message.created_at,
       conversationId
-    };
+    } : null;
   } catch (error) {
     console.error('Error sending message:', error);
     return null;

@@ -24,29 +24,29 @@ export function useJobsService(user: User | null, profile: Profile | null) {
         created_at,
         status,
         cover_image,
-        number_of_people,
         deadline
       `)
       .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      const formattedJobs: Job[] = data.map(job => ({
-        id: job.id,
-        title: job.title,
-        description: job.description,
-        skills: job.skills || [],
-        budget: job.budget,
-        providerId: job.provider_id,  
-        providerName: job.profiles?.name || 'Unknown Provider',
-        createdAt: job.created_at,
-        status: (job.status as JobStatus) || 'open',
-        coverImage: job.cover_image,
-        numberOfPeople: job.number_of_people,
-        deadline: job.deadline
-      }));
-      
-      setJobs(formattedJobs);
+      if (data) {
+        const formattedJobs: Job[] = data.map(job => ({
+          id: job.id,
+          title: job.title,
+          description: job.description,
+          skills: job.skills || [],
+          budget: job.budget,
+          providerId: job.provider_id,  
+          providerName: job.profiles?.name || 'Unknown Provider',
+          createdAt: job.created_at,
+          status: (job.status as JobStatus) || 'open',
+          coverImage: job.cover_image,
+          deadline: job.deadline
+        }));
+        
+        setJobs(formattedJobs);
+      }
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
@@ -74,7 +74,6 @@ export function useJobsService(user: User | null, profile: Profile | null) {
           budget: jobData.budget,
           provider_id: user.id,
           cover_image: jobData.coverImage,
-          number_of_people: jobData.numberOfPeople,
           deadline: jobData.deadline
         });
       

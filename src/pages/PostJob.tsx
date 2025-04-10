@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, DollarSign, Search, Users } from 'lucide-react';
+import { X, Plus, DollarSign, Search, Users, Calendar } from 'lucide-react';
 import { 
   Command, 
   CommandEmpty, 
@@ -33,7 +32,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Sample common skills for the dropdown
 const commonSkills = [
   'React', 'Angular', 'Vue', 'JavaScript', 'TypeScript', 'Node.js',
   'Python', 'Java', 'C#', 'PHP', 'Ruby', 'Go', 'Swift', 'Kotlin',
@@ -60,8 +58,8 @@ const PostJob: React.FC = () => {
   const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
   const [isSkillPopoverOpen, setIsSkillPopoverOpen] = useState(false);
   const [numberOfPeople, setNumberOfPeople] = useState('1');
+  const [deadline, setDeadline] = useState('');
 
-  // Update filtered skills whenever newSkill or skills change
   useEffect(() => {
     if (newSkill.trim() === '') {
       setFilteredSkills([]);
@@ -77,7 +75,7 @@ const PostJob: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !budget || skills.length === 0) {
+    if (!title || !description || !budget || skills.length === 0 || !deadline) {
       toast.error('Please fill in all required fields and add at least one skill');
       return;
     }
@@ -87,9 +85,10 @@ const PostJob: React.FC = () => {
         title,
         description,
         skills,
-        budget: Number(budget), // Convert string to number
+        budget: Number(budget),
         coverImage: undefined,
-        numberOfPeople: Number(numberOfPeople) // Add number of people needed
+        numberOfPeople: Number(numberOfPeople),
+        deadline
       });
       
       toast.success('Job posted successfully');
@@ -200,6 +199,22 @@ const PostJob: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="deadline">Deadline</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                <Input 
+                  id="deadline" 
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="pl-10"
+                  required
+                  min={new Date().toISOString().split('T')[0]}
+                />
               </div>
             </div>
             
