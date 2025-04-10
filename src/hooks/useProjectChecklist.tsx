@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 interface ChecklistItem {
   id: string;
@@ -44,10 +45,15 @@ export const useProjectChecklist = (projectId?: string): UseProjectChecklistRetu
           .maybeSingle();
         
         if (!error && checklistData) {
+          // Safely cast the JSON data to ChecklistItem[]
+          const todoItems = (checklistData.todo_items as Json[] || []) as ChecklistItem[];
+          const inProgressItems = (checklistData.in_progress_items as Json[] || []) as ChecklistItem[];
+          const doneItems = (checklistData.done_items as Json[] || []) as ChecklistItem[];
+          
           setChecklistData({
-            todoItems: checklistData.todo_items || [],
-            inProgressItems: checklistData.in_progress_items || [],
-            doneItems: checklistData.done_items || []
+            todoItems: todoItems || [],
+            inProgressItems: inProgressItems || [],
+            doneItems: doneItems || []
           });
         } else {
           // Initialize with empty arrays if no data exists
