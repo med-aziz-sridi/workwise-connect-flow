@@ -422,6 +422,38 @@ export type Database = {
           },
         ]
       }
+      project_whiteboards: {
+        Row: {
+          canvas_json: string
+          created_at: string | null
+          id: string
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          canvas_json?: string
+          created_at?: string | null
+          id?: string
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          canvas_json?: string
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_whiteboards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string

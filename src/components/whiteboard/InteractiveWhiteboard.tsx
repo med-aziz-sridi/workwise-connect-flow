@@ -27,11 +27,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import WhiteboardToolbar from './WhiteboardToolbar';
 import TaskCard from './TaskCard';
 
-export interface WhiteboardData {
+interface WhiteboardData {
   id: string;
-  projectId: string;
-  canvasJson: string;
-  updatedAt: string;
+  project_id: string;
+  canvas_json: string;
+  updated_at: string;
 }
 
 interface InteractiveWhiteboardProps {
@@ -117,11 +117,15 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
   // Load whiteboard data from database
   const loadWhiteboardData = async (fabricCanvas: fabric.Canvas) => {
     try {
+      // Use type assertion to tell TypeScript that project_whiteboards is valid
       const { data, error } = await supabase
         .from('project_whiteboards')
         .select('*')
         .eq('project_id', projectId)
-        .maybeSingle();
+        .maybeSingle() as { 
+          data: WhiteboardData | null; 
+          error: any;
+        };
 
       if (error) throw error;
 
@@ -240,11 +244,15 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
       }
       
       // Check if a whiteboard record exists for this project
+      // Use type assertion to tell TypeScript that project_whiteboards is valid
       const { data: existingData, error: checkError } = await supabase
         .from('project_whiteboards')
         .select('id')
         .eq('project_id', projectId)
-        .maybeSingle();
+        .maybeSingle() as {
+          data: { id: string } | null;
+          error: any;
+        };
       
       if (checkError) throw checkError;
       
@@ -256,7 +264,9 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
             canvas_json: json,
             updated_at: new Date().toISOString()
           })
-          .eq('project_id', projectId);
+          .eq('project_id', projectId) as {
+            error: any;
+          };
           
         if (updateError) throw updateError;
       } else {
@@ -268,7 +278,9 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
             canvas_json: json,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
+          }) as {
+            error: any;
+          };
           
         if (insertError) throw insertError;
       }
