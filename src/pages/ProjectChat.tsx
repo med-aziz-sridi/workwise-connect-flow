@@ -7,7 +7,7 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, ListCheck, Send, User } from 'lucide-react';
+import { Loader2, ListCheck, Send, User, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,6 +18,19 @@ interface ProjectMessage {
   sender_profile_picture: string | null;
   content: string;
   created_at: string;
+}
+
+// Define the interface for the database response
+interface ProjectMessageRecord {
+  id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  project_id: string;
+  profiles?: {
+    name: string;
+    profile_picture: string | null;
+  };
 }
 
 const ProjectChat: React.FC = () => {
@@ -58,25 +71,16 @@ const ProjectChat: React.FC = () => {
             setParticipants(participantsData);
           }
           
-          // Fetch messages
+          // Fetch messages using a raw query since project_messages isn't in the types
           const { data: messagesData, error: messagesError } = await supabase
-            .from('project_messages')
-            .select(`
-              id, 
-              sender_id, 
-              content, 
-              created_at,
-              profiles:sender_id (name, profile_picture)
-            `)
-            .eq('project_id', projectId)
-            .order('created_at', { ascending: true });
+            .rpc('get_project_messages', { p_project_id: projectId });
             
           if (!messagesError && messagesData) {
             const formattedMessages = messagesData.map((msg: any) => ({
               id: msg.id,
               sender_id: msg.sender_id,
-              sender_name: msg.profiles?.name || 'Unknown User',
-              sender_profile_picture: msg.profiles?.profile_picture || null,
+              sender_name: msg.sender_name || 'Unknown User',
+              sender_profile_picture: msg.profile_picture || null,
               content: msg.content,
               created_at: msg.created_at
             }));
@@ -137,12 +141,12 @@ const ProjectChat: React.FC = () => {
     
     setIsSending(true);
     try {
+      // Use RPC to insert project message
       const { error } = await supabase
-        .from('project_messages')
-        .insert({
-          project_id: projectId,
-          sender_id: user.id,
-          content: newMessage.trim()
+        .rpc('insert_project_message', {
+          p_project_id: projectId,
+          p_sender_id: user.id,
+          p_content: newMessage.trim()
         });
         
       if (error) throw error;

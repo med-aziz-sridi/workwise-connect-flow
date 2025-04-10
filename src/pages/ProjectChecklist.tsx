@@ -23,6 +23,14 @@ interface ProjectChecklistData {
   doneItems: ChecklistItem[];
 }
 
+// Define the interface for the response from the database
+interface ProjectChecklistRecord {
+  project_id: string;
+  todo_items: ChecklistItem[];
+  in_progress_items: ChecklistItem[];
+  done_items: ChecklistItem[];
+}
+
 const ProjectChecklist: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -51,13 +59,15 @@ const ProjectChecklist: React.FC = () => {
           .from('project_checklists')
           .select('*')
           .eq('project_id', projectId)
-          .single();
+          .maybeSingle();
         
         if (!error && checklistData) {
+          // Type assert the result
+          const typedData = checklistData as unknown as ProjectChecklistRecord;
           setChecklistData({
-            todoItems: checklistData.todo_items || [],
-            inProgressItems: checklistData.in_progress_items || [],
-            doneItems: checklistData.done_items || []
+            todoItems: typedData.todo_items || [],
+            inProgressItems: typedData.in_progress_items || [],
+            doneItems: typedData.done_items || []
           });
         } else {
           // Initialize with empty arrays if no data exists
@@ -88,7 +98,7 @@ const ProjectChecklist: React.FC = () => {
     
     try {
       // Prepare data for database update
-      const updateData: any = {};
+      const updateData: Record<string, any> = {};
       
       if (section === 'todoItems') {
         updateData.todo_items = items;
