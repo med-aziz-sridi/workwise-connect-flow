@@ -7,7 +7,6 @@ import {
   Circle,
   Pencil,
   StickyNote,
-  CheckSquare,
   Move,
   ZoomIn,
   ZoomOut,
@@ -24,7 +23,6 @@ interface WhiteboardToolbarProps {
   onToolSelect: (tool: string) => void;
   onAddShape: (type: 'rect' | 'circle') => void;
   onAddStickyNote: () => void;
-  onAddTaskCard: () => void;
   onAddText: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -40,7 +38,6 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
   onToolSelect,
   onAddShape,
   onAddStickyNote,
-  onAddTaskCard,
   onAddText,
   onUndo,
   onRedo,
@@ -88,11 +85,6 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
           icon={<StickyNote size={16} />}
           label="Sticky Note"
           onClick={onAddStickyNote}
-        />
-        <ToolButton 
-          icon={<CheckSquare size={16} />}
-          label="Task Card"
-          onClick={onAddTaskCard}
         />
         <ToolButton 
           icon={<Type size={16} />}

@@ -3,25 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProjectInfo from '@/components/project-checklist/ProjectInfo';
-import ChecklistTabs from '@/components/project-checklist/ChecklistTabs';
 import { useProjectChecklist } from '@/hooks/useProjectChecklist';
+import DraggableTaskBoard from '@/components/project-checklist/DraggableTaskBoard';
 
 const ProjectChecklist: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { jobs } = useData();
   const [project, setProject] = useState<any>(null);
-  
-  const { 
-    checklistData,
-    isLoading,
-    updateChecklistSection
-  } = useProjectChecklist(projectId);
+  const [isLoading, setIsLoading] = useState(true);
+  const { checklistData, isLoading: checklistLoading, updateChecklistSection } = useProjectChecklist(projectId);
 
   useEffect(() => {
     if (!projectId || !user) return;
@@ -35,13 +31,15 @@ const ProjectChecklist: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching project data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
     fetchProject();
   }, [projectId, user, jobs]);
 
-  if (isLoading) {
+  if (isLoading || checklistLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
         <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
@@ -69,22 +67,23 @@ const ProjectChecklist: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <ProjectInfo projectId={projectId} projectTitle={project.title} />
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Collaborative Project Checklist</CardTitle>
-          <CardDescription>
-            Track project progress together with your team
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChecklistTabs
-            todoItems={checklistData.todoItems}
-            inProgressItems={checklistData.inProgressItems}
-            doneItems={checklistData.doneItems}
-            onUpdateSection={updateChecklistSection}
-          />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-6 mt-6">
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-xl font-bold mb-4">Project Tasks</h2>
+            <p className="text-gray-600 mb-6">
+              Drag and drop tasks between columns to update their status. Create new tasks and manage your project workflow.
+            </p>
+            
+            <DraggableTaskBoard
+              todoItems={checklistData.todoItems}
+              inProgressItems={checklistData.inProgressItems}
+              doneItems={checklistData.doneItems}
+              onUpdateSection={updateChecklistSection}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
