@@ -117,15 +117,11 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
   // Load whiteboard data from database
   const loadWhiteboardData = async (fabricCanvas: fabric.Canvas) => {
     try {
-      // Use type assertion to tell TypeScript that project_whiteboards is valid
       const { data, error } = await supabase
         .from('project_whiteboards')
         .select('*')
         .eq('project_id', projectId)
-        .maybeSingle() as { 
-          data: WhiteboardData | null; 
-          error: any;
-        };
+        .single();
 
       if (error) throw error;
 
@@ -244,17 +240,13 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
       }
       
       // Check if a whiteboard record exists for this project
-      // Use type assertion to tell TypeScript that project_whiteboards is valid
       const { data: existingData, error: checkError } = await supabase
         .from('project_whiteboards')
         .select('id')
         .eq('project_id', projectId)
-        .maybeSingle() as {
-          data: { id: string } | null;
-          error: any;
-        };
+        .single();
       
-      if (checkError) throw checkError;
+      if (checkError && checkError.code !== 'PGRST116') throw checkError;
       
       if (existingData) {
         // Update existing whiteboard
@@ -264,9 +256,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
             canvas_json: json,
             updated_at: new Date().toISOString()
           })
-          .eq('project_id', projectId) as {
-            error: any;
-          };
+          .eq('project_id', projectId);
           
         if (updateError) throw updateError;
       } else {
@@ -278,9 +268,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
             canvas_json: json,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }) as {
-            error: any;
-          };
+          });
           
         if (insertError) throw insertError;
       }
