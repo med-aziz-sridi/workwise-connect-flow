@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -67,16 +68,25 @@ const ProjectChat: React.FC = () => {
             setParticipants(participantsData);
           }
           
-          // Fetch messages using RPC with proper type casting
+          // Fetch messages using a direct query instead of RPC to avoid type issues
           const { data: messagesData, error: messagesError } = await supabase
-            .rpc('get_project_messages', { p_project_id: projectId });
+            .from('project_messages')
+            .select(`
+              id, 
+              content, 
+              created_at, 
+              sender_id, 
+              profiles(name, profile_picture)
+            `)
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: true });
             
           if (!messagesError && messagesData) {
-            const formattedMessages = (messagesData as ProjectMessageResponse[]).map(msg => ({
+            const formattedMessages = messagesData.map(msg => ({
               id: msg.id,
               sender_id: msg.sender_id,
-              sender_name: msg.sender_name || 'Unknown User',
-              sender_profile_picture: msg.profile_picture || null,
+              sender_name: msg.profiles?.name || 'Unknown User',
+              sender_profile_picture: msg.profiles?.profile_picture || null,
               content: msg.content,
               created_at: msg.created_at
             }));
@@ -137,12 +147,13 @@ const ProjectChat: React.FC = () => {
     
     setIsSending(true);
     try {
-      // Use RPC to insert project message
+      // Use direct insert instead of RPC
       const { error } = await supabase
-        .rpc('insert_project_message', {
-          p_project_id: projectId,
-          p_sender_id: user.id,
-          p_content: newMessage.trim()
+        .from('project_messages')
+        .insert({
+          project_id: projectId,
+          sender_id: user.id,
+          content: newMessage.trim()
         });
         
       if (error) throw error;
