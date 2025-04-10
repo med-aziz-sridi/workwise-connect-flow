@@ -50,6 +50,7 @@ export interface Job {
   status: JobStatus;
   coverImage?: string;
   numberOfPeople?: number;
+  deadline: string;
 }
 
 export interface CreateJobInput {
@@ -59,6 +60,7 @@ export interface CreateJobInput {
   budget: number;
   coverImage?: string;
   numberOfPeople?: number;
+  deadline: string;
 }
 
 export interface FreelancerInfo {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, Menu, X, User, Briefcase, LogOut } from 'lucide-react';
@@ -54,6 +53,12 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex md:items-center md:space-x-4">
             {user ? (
               <>
+                <Button variant="ghost" asChild>
+                  <Link to="/">Home</Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link to="/messages">Messages</Link>
+                </Button>
                 <Button variant="ghost" asChild>
                   <Link to="/jobs">Find Jobs</Link>
                 </Button>
@@ -172,6 +177,18 @@ const Navbar: React.FC = () => {
                           </div>
                         </div>
                         
+                        <Button variant="ghost" asChild onClick={closeMenu}>
+                          <Link to="/" className="justify-start">
+                            Home
+                          </Link>
+                        </Button>
+                        
+                        <Button variant="ghost" asChild onClick={closeMenu}>
+                          <Link to="/messages" className="justify-start">
+                            Messages
+                          </Link>
+                        </Button>
+
                         <Button variant="ghost" asChild onClick={closeMenu}>
                           <Link to="/profile" className="justify-start">
                             <User className="mr-2 h-5 w-5" />

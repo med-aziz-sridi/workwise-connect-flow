@@ -12,12 +12,22 @@ export function useJobsService(user: User | null, profile: Profile | null) {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('jobs')
-        .select(`
-          *,
-          profiles:provider_id (name)
-        `)
-        .order('created_at', { ascending: false });
+      .from('jobs')
+      .select(`
+        id,
+        title,
+        description,
+        skills,
+        budget,
+        provider_id,
+        profiles:provider_id (name),
+        created_at,
+        status,
+        cover_image,
+        number_of_people,
+        deadline
+      `)
+      .order('created_at', { ascending: false });
       
       if (error) throw error;
       
@@ -27,12 +37,13 @@ export function useJobsService(user: User | null, profile: Profile | null) {
         description: job.description,
         skills: job.skills || [],
         budget: job.budget,
-        providerId: job.provider_id,
+        providerId: job.provider_id,  
         providerName: job.profiles?.name || 'Unknown Provider',
         createdAt: job.created_at,
         status: (job.status as JobStatus) || 'open',
         coverImage: job.cover_image,
-        numberOfPeople: undefined
+        numberOfPeople: job.number_of_people,
+        deadline: job.deadline
       }));
       
       setJobs(formattedJobs);
@@ -63,7 +74,8 @@ export function useJobsService(user: User | null, profile: Profile | null) {
           budget: jobData.budget,
           provider_id: user.id,
           cover_image: jobData.coverImage,
-          number_of_people: jobData.numberOfPeople
+          number_of_people: jobData.numberOfPeople,
+          deadline: jobData.deadline
         });
       
       if (error) throw error;
@@ -121,7 +133,8 @@ export function useJobsService(user: User | null, profile: Profile | null) {
           budget: job.budget,
           status: job.status,
           cover_image: job.coverImage,
-          number_of_people: job.numberOfPeople
+          number_of_people: job.numberOfPeople, 
+          deadline: job.deadline
         })
         .eq('id', job.id);
       

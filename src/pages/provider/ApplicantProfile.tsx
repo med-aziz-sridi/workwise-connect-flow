@@ -45,6 +45,7 @@ const ApplicantProfile: React.FC = () => {
   const [profile, setProfile] = useState<FreelancerProfile | null>(null);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchFreelancerData = async () => {
