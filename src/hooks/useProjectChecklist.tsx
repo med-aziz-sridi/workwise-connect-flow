@@ -24,6 +24,34 @@ interface UseProjectChecklistReturn {
   ) => Promise<void>;
 }
 
+// Helper function to safely convert Json data to ChecklistItem[]
+const convertJsonToChecklistItems = (jsonData: Json | null): ChecklistItem[] => {
+  if (!jsonData || !Array.isArray(jsonData)) {
+    return [];
+  }
+  
+  // Map and validate each item
+  return jsonData.map(item => {
+    // Ensure the item has the required properties
+    if (typeof item === 'object' && item !== null && 
+        'id' in item && 'text' in item && 'completed' in item) {
+      return {
+        id: String(item.id),
+        text: String(item.text),
+        completed: Boolean(item.completed)
+      };
+    }
+    
+    // Return a default item if data is malformed
+    console.warn('Malformed checklist item:', item);
+    return {
+      id: `generated-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      text: 'Unnamed item',
+      completed: false
+    };
+  });
+};
+
 export const useProjectChecklist = (projectId?: string): UseProjectChecklistReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [checklistData, setChecklistData] = useState<ProjectChecklistData>({
@@ -37,7 +65,6 @@ export const useProjectChecklist = (projectId?: string): UseProjectChecklistRetu
     
     const fetchChecklistData = async () => {
       try {
-        // Use a cast to handle type issues with the project_checklists table
         const { data: checklistData, error } = await supabase
           .from('project_checklists')
           .select('*')
@@ -45,15 +72,15 @@ export const useProjectChecklist = (projectId?: string): UseProjectChecklistRetu
           .maybeSingle();
         
         if (!error && checklistData) {
-          // Safely cast the JSON data to ChecklistItem[]
-          const todoItems = (checklistData.todo_items as Json[] || []) as ChecklistItem[];
-          const inProgressItems = (checklistData.in_progress_items as Json[] || []) as ChecklistItem[];
-          const doneItems = (checklistData.done_items as Json[] || []) as ChecklistItem[];
+          // Safely convert the JSON data to ChecklistItem[] using our helper function
+          const todoItems = convertJsonToChecklistItems(checklistData.todo_items);
+          const inProgressItems = convertJsonToChecklistItems(checklistData.in_progress_items);
+          const doneItems = convertJsonToChecklistItems(checklistData.done_items);
           
           setChecklistData({
-            todoItems: todoItems || [],
-            inProgressItems: inProgressItems || [],
-            doneItems: doneItems || []
+            todoItems,
+            inProgressItems,
+            doneItems
           });
         } else {
           // Initialize with empty arrays if no data exists
