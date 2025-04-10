@@ -171,6 +171,7 @@ export type Database = {
           budget: number
           cover_image: string | null
           created_at: string
+          deadline: string
           description: string
           id: string
           provider_id: string
@@ -182,6 +183,7 @@ export type Database = {
           budget: number
           cover_image?: string | null
           created_at?: string
+          deadline?: string
           description: string
           id?: string
           provider_id: string
@@ -193,6 +195,7 @@ export type Database = {
           budget?: number
           cover_image?: string | null
           created_at?: string
+          deadline?: string
           description?: string
           id?: string
           provider_id?: string
