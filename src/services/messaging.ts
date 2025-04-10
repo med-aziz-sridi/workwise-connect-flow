@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation, Message } from '@/types';
 
@@ -81,13 +80,14 @@ interface MessageRow {
   content: string;
   read: boolean;
   created_at: string;
+  conversation_id: string;
 }
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
     const { data, error } = await supabase
       .from('messages')
-      .select('id, sender_id, receiver_id, content, read, created_at')
+      .select('id, sender_id, receiver_id, content, read, created_at, conversation_id')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
     
@@ -100,7 +100,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
       content: message.content,
       read: message.read,
       createdAt: message.created_at,
-      conversationId
+      conversationId: message.conversation_id
     }));
   } catch (error) {
     console.error('Error fetching messages:', error);
