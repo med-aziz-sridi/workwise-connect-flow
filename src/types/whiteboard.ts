@@ -20,3 +20,18 @@ export interface TaskCardData {
     completed: boolean;
   }[];
 }
+
+// Define the raw SQL query response types for better type safety
+export interface WhiteboardQueryResponse {
+  data: WhiteboardData | null;
+  error: any;
+}
+
+export interface WhiteboardIdQueryResponse {
+  data: { id: string } | null;
+  error: any;
+}
+
+export interface WhiteboardMutationResponse {
+  error: any;
+}

@@ -1,8 +1,7 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { useToast } from '@/components/ui/use-toast';
-import { WhiteboardData } from '@/types/whiteboard';
+import { WhiteboardData, WhiteboardQueryResponse, WhiteboardIdQueryResponse, WhiteboardMutationResponse } from '@/types/whiteboard';
 import { supabase } from '@/integrations/supabase/client';
 import WhiteboardToolbar from './WhiteboardToolbar';
 
@@ -91,7 +90,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
         .from('project_whiteboards')
         .select('*')
         .eq('project_id', projectId)
-        .maybeSingle() as unknown as { data: WhiteboardData | null, error: any };
+        .maybeSingle() as unknown as WhiteboardQueryResponse;
 
       if (error) throw error;
 
@@ -218,7 +217,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
         .from('project_whiteboards')
         .select('id')
         .eq('project_id', projectId)
-        .maybeSingle() as unknown as { data: { id: string } | null, error: any };
+        .maybeSingle() as unknown as WhiteboardIdQueryResponse;
       
       if (checkError) throw checkError;
       
@@ -230,7 +229,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
             canvas_json: json,
             updated_at: new Date().toISOString()
           })
-          .eq('project_id', projectId) as unknown as { error: any };
+          .eq('project_id', projectId) as unknown as WhiteboardMutationResponse;
           
         if (updateError) throw updateError;
       } else {
@@ -242,7 +241,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
             canvas_json: json,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }) as unknown as { error: any };
+          }) as unknown as WhiteboardMutationResponse;
           
         if (insertError) throw insertError;
       }
