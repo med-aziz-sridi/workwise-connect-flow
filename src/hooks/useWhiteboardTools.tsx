@@ -7,7 +7,9 @@ import {
   addStickyNote, 
   addTaskCard, 
   addText,
-  createDefaultTaskSections
+  addSection,
+  createDefaultTaskSections,
+  createBlankWhiteboard
 } from '@/components/whiteboard/WhiteboardShapes';
 import { loadWhiteboardData, saveWhiteboardData } from '@/services/whiteboardService';
 
@@ -21,6 +23,7 @@ export function useWhiteboardTools(
   const [activeTool, setActiveTool] = useState<string>('select');
   const [lastSavedJson, setLastSavedJson] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [whiteboardMode, setWhiteboardMode] = useState<'default' | 'blank'>('default');
   const { toast } = useToast();
 
   // Handle tool selection
@@ -97,6 +100,47 @@ export function useWhiteboardTools(
     }
   };
 
+  // Create new section
+  const handleAddSection = () => {
+    if (!canvas) return;
+    
+    const colors = [
+      { color: '#f3f4f6', textColor: '#111827' }, // Gray
+      { color: '#e5edff', textColor: '#1e40af' }, // Blue
+      { color: '#f0fdf4', textColor: '#166534' }, // Green
+      { color: '#fff7ed', textColor: '#9a3412' }, // Orange
+      { color: '#fef2f2', textColor: '#991b1b' }, // Red
+      { color: '#f5f3ff', textColor: '#5b21b6' }  // Purple
+    ];
+    
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const section = addSection(
+      canvas, 
+      'New Section', 
+      randomColor.color, 
+      randomColor.textColor, 
+      100, 
+      100
+    );
+    
+    if (canvas.fire) {
+      canvas.fire('object:added', { target: section });
+    }
+  };
+
+  // Toggle between default sections and blank whiteboard
+  const toggleWhiteboardMode = () => {
+    if (!canvas) return;
+    
+    if (whiteboardMode === 'default') {
+      createBlankWhiteboard(canvas);
+      setWhiteboardMode('blank');
+    } else {
+      createDefaultTaskSections(canvas);
+      setWhiteboardMode('default');
+    }
+  };
+
   // Save whiteboard to database
   const saveWhiteboardToDatabase = async () => {
     if (!canvas || !projectId) return;
@@ -151,6 +195,10 @@ export function useWhiteboardTools(
         fabricCanvas.loadFromJSON(jsonData, () => {
           fabricCanvas.renderAll();
           setLastSavedJson(jsonData);
+          
+          // Determine whiteboard mode based on content
+          setWhiteboardMode('blank'); // Default to blank since we loaded custom content
+          
           toast({
             title: "Whiteboard loaded",
             description: "Your project whiteboard has been loaded",
@@ -159,6 +207,7 @@ export function useWhiteboardTools(
       } else {
         // Initialize with default sections for a new whiteboard
         createDefaultTaskSections(fabricCanvas);
+        setWhiteboardMode('default');
       }
     } catch (error) {
       console.error('Error loading whiteboard:', error);
@@ -170,6 +219,7 @@ export function useWhiteboardTools(
       
       // Initialize with default sections even on error
       createDefaultTaskSections(fabricCanvas);
+      setWhiteboardMode('default');
     }
   };
 
@@ -209,15 +259,18 @@ export function useWhiteboardTools(
   return {
     activeTool,
     isSaving,
+    whiteboardMode,
     handleToolSelect,
     handleAddShape,
     handleAddStickyNote,
     handleAddTaskCard,
     handleAddText,
+    handleAddSection,
     handleUndo,
     handleRedo,
     handleZoomIn,
     handleZoomOut,
+    toggleWhiteboardMode,
     saveWhiteboardToDatabase,
     loadWhiteboardFromDatabase,
     deleteSelectedObject

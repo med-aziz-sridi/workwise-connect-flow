@@ -3,7 +3,7 @@ import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, GripVertical } from 'lucide-react';
 
 interface SubtaskItemProps {
   id: string;
@@ -12,6 +12,7 @@ interface SubtaskItemProps {
   onChange: (id: string, text: string) => void;
   onToggle: (id: string, completed: boolean) => void;
   onRemove: (id: string) => void;
+  dragHandleProps?: any;
 }
 
 const SubtaskItem: React.FC<SubtaskItemProps> = ({
@@ -20,10 +21,16 @@ const SubtaskItem: React.FC<SubtaskItemProps> = ({
   completed,
   onChange,
   onToggle,
-  onRemove
+  onRemove,
+  dragHandleProps
 }) => {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 group">
+      {dragHandleProps && (
+        <div {...dragHandleProps} className="cursor-grab opacity-40 group-hover:opacity-100">
+          <GripVertical size={14} />
+        </div>
+      )}
       <Checkbox
         id={`subtask-${id}`}
         checked={completed}

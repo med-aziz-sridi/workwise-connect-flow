@@ -1,5 +1,6 @@
 
 import { fabric } from 'fabric';
+import { WhiteboardSection } from '@/types/whiteboard';
 
 export function addShape(canvas: fabric.Canvas, shapeType: 'rect' | 'circle') {
   let shape;
@@ -67,7 +68,7 @@ export function addStickyNote(canvas: fabric.Canvas) {
   canvas.setActiveObject(group);
 }
 
-export function addTaskCard(canvas: fabric.Canvas) {
+export function addTaskCard(canvas: fabric.Canvas, section?: string) {
   // Create a more structured task card
   const card = new fabric.Rect({
     width: 200,
@@ -125,28 +126,31 @@ export function addTaskCard(canvas: fabric.Canvas) {
     fill: '#4b5563',
   });
   
-  const dueDate = new fabric.Textbox('Due: Tomorrow', {
-    width: 180,
-    left: 10,
-    top: 140,
-    fontSize: 12,
-    fontFamily: 'Arial',
-    fill: '#6b7280',
-  });
+  // Add section info if provided
+  const sectionInfo = section 
+    ? new fabric.Textbox(`Section: ${section}`, {
+        width: 180,
+        left: 10,
+        top: 140,
+        fontSize: 12,
+        fontFamily: 'Arial',
+        fill: '#6b7280',
+      })
+    : new fabric.Textbox('No section assigned', {
+        width: 180,
+        left: 10,
+        top: 140,
+        fontSize: 12,
+        fontFamily: 'Arial',
+        fill: '#6b7280',
+      });
   
-  const assignee = new fabric.Textbox('Assigned to: You', {
-    width: 180,
-    left: 10,
-    top: 160,
-    fontSize: 12,
-    fontFamily: 'Arial',
-    fill: '#6b7280',
-  });
+  const elements = [
+    card, titleBar, titleText, descriptionText,
+    checkItem1, checkItem2, sectionInfo
+  ];
   
-  const group = new fabric.Group([
-    card, titleBar, titleText, descriptionText, 
-    checkItem1, checkItem2, dueDate, assignee
-  ], {
+  const group = new fabric.Group(elements, {
     left: 100,
     top: 100,
     subTargetCheck: true,
@@ -171,69 +175,90 @@ export function addText(canvas: fabric.Canvas) {
   canvas.setActiveObject(text);
 }
 
+export function addSection(canvas: fabric.Canvas, title: string, color: string, textColor: string, left: number, top: number) {
+  // Create background rectangle for the section
+  const rect = new fabric.Rect({
+    width: 250,
+    height: 300,
+    fill: color,
+    rx: 10,
+    ry: 10,
+    strokeWidth: 1,
+    stroke: '#e5e7eb',
+  });
+  
+  // Create section title
+  const text = new fabric.Textbox(title, {
+    top: 10,
+    width: 230,
+    left: 10,
+    fontSize: 18,
+    fontWeight: 'bold',
+    fill: textColor,
+    fontFamily: 'Arial',
+    textAlign: 'center',
+  });
+  
+  // Add a plus button for adding tasks
+  const addButton = new fabric.Textbox('+ Add Task', {
+    top: 40,
+    width: 230,
+    left: 10,
+    fontSize: 14,
+    fill: textColor,
+    fontFamily: 'Arial',
+    textAlign: 'center',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    padding: 5,
+  });
+  
+  // Create group for the section
+  const group = new fabric.Group([rect, text, addButton], {
+    left: left,
+    top: top,
+    subTargetCheck: true,
+  });
+  
+  // Add custom properties
+  group.toObject = (function(toObject) {
+    return function() {
+      return fabric.util.object.extend(toObject.call(this), {
+        sectionId: this.sectionId,
+        sectionTitle: this.sectionTitle
+      });
+    };
+  })(group.toObject);
+  
+  group.sectionId = Math.random().toString(36).substring(2, 9);
+  group.sectionTitle = title;
+  
+  canvas.add(group);
+  return group;
+}
+
 export function createDefaultTaskSections(canvas: fabric.Canvas) {
-  const canvasWidth = canvas.getWidth();
-  const canvasHeight = canvas.getHeight();
-  
-  const columnWidth = canvasWidth / 4;
-  const columnHeight = canvasHeight * 0.8;
-  
-  // Create the task sections (To Do, In Progress, Review, Done)
-  const sections = [
+  const defaultSections = [
     { title: 'To Do', color: '#f3f4f6', textColor: '#111827' },
     { title: 'In Progress', color: '#e5edff', textColor: '#1e40af' },
-    { title: 'Review', color: '#fff7ed', textColor: '#9a3412' },
     { title: 'Done', color: '#f0fdf4', textColor: '#166534' }
   ];
   
-  sections.forEach((section, index) => {
-    // Create background rectangle for the section
-    const rect = new fabric.Rect({
-      left: index * columnWidth + 10,
-      top: 70,
-      width: columnWidth - 20,
-      height: columnHeight,
-      fill: section.color,
-      rx: 10,
-      ry: 10,
-      strokeWidth: 1,
-      stroke: '#e5e7eb',
-      selectable: true,
-      hasControls: true,
-      lockMovementX: false,
-      lockMovementY: false,
-    });
-    
-    // Create section title
-    const text = new fabric.Textbox(section.title, {
-      left: index * columnWidth + 20,
-      top: 80,
-      width: columnWidth - 40,
-      fontSize: 24,
-      fontWeight: 'bold',
-      fill: section.textColor,
-      fontFamily: 'Arial',
-      textAlign: 'center',
-    });
-    
-    // Add a plus button for adding tasks
-    const addButton = new fabric.Textbox('+ Add Task', {
-      left: index * columnWidth + 20,
-      top: 120,
-      width: columnWidth - 40,
-      fontSize: 16,
-      fill: '#6b7280',
-      fontFamily: 'Arial',
-      textAlign: 'center',
-      backgroundColor: '#ffffff',
-      padding: 10,
-    });
-    
-    // Add objects to canvas
-    canvas.add(rect);
-    canvas.add(text);
-    canvas.add(addButton);
+  const canvasWidth = canvas.getWidth();
+  const spacing = 20;
+  const sectionWidth = 250;
+  const startLeft = (canvasWidth - (sectionWidth * defaultSections.length + spacing * (defaultSections.length - 1))) / 2;
+  
+  defaultSections.forEach((section, index) => {
+    const left = startLeft + (sectionWidth + spacing) * index;
+    addSection(canvas, section.title, section.color, section.textColor, left, 70);
   });
   
+  canvas.renderAll();
+}
+
+export function createBlankWhiteboard(canvas: fabric.Canvas) {
+  // Just initialize an empty whiteboard without any sections
+  canvas.clear();
+  canvas.setBackgroundColor('#f8f9fa', canvas.renderAll.bind(canvas));
   canvas.renderAll();
 }
