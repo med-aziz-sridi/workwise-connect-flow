@@ -2,37 +2,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { useToast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
-import {
-  Square,
-  Circle,
-  Pencil,
-  StickyNote,
-  CheckSquare,
-  Move,
-  ZoomIn,
-  ZoomOut,
-  Eraser,
-  Type,
-  Save,
-  Undo,
-  Redo,
-  Plus,
-  X
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WhiteboardData } from '@/types/whiteboard';
 import { supabase } from '@/integrations/supabase/client';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import WhiteboardToolbar from './WhiteboardToolbar';
-import TaskCard from './TaskCard';
-
-export interface WhiteboardData {
-  id: string;
-  projectId: string;
-  canvasJson: string;
-  updatedAt: string;
-}
 
 interface InteractiveWhiteboardProps {
   projectId?: string;
@@ -44,10 +16,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
   const [canvasHistory, setCanvasHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'draw' | 'tasks' | 'notes'>('tasks');
   const [activeTool, setActiveTool] = useState<string>('select');
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [dragDisabled, setDragDisabled] = useState(false);
   const [lastSavedJson, setLastSavedJson] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -126,9 +95,13 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
       if (error) throw error;
 
       if (data && data.canvas_json) {
-        fabricCanvas.loadFromJSON(data.canvas_json, () => {
+        const jsonData = typeof data.canvas_json === 'string' 
+          ? data.canvas_json 
+          : JSON.stringify(data.canvas_json);
+
+        fabricCanvas.loadFromJSON(jsonData, () => {
           fabricCanvas.renderAll();
-          setLastSavedJson(data.canvas_json);
+          setLastSavedJson(jsonData);
           toast({
             title: "Whiteboard loaded",
             description: "Your project whiteboard has been loaded",
