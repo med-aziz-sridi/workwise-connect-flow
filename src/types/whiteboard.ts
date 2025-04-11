@@ -28,6 +28,10 @@ export interface WhiteboardSection {
   color: string;
   textColor: string;
   tasks: TaskCardData[];
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 // Define the raw SQL query response types for better type safety

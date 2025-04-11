@@ -20,15 +20,18 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
   const {
     activeTool,
     isSaving,
+    whiteboardMode,
     handleToolSelect,
     handleAddShape,
     handleAddStickyNote,
     handleAddTaskCard,
     handleAddText,
+    handleAddSection,
     handleUndo,
     handleRedo,
     handleZoomIn,
     handleZoomOut,
+    toggleWhiteboardMode,
     saveWhiteboardToDatabase,
     loadWhiteboardFromDatabase,
     deleteSelectedObject
@@ -45,17 +48,20 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
     <div className="flex flex-col w-full h-full">
       <WhiteboardToolbar 
         activeTool={activeTool}
+        whiteboardMode={whiteboardMode}
         onToolSelect={handleToolSelect}
         onAddShape={(type) => handleAddShape(type)}
         onAddStickyNote={handleAddStickyNote}
         onAddTaskCard={handleAddTaskCard}
         onAddText={handleAddText}
+        onAddSection={handleAddSection}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onSave={saveWhiteboardToDatabase}
         onDelete={deleteSelectedObject}
+        onToggleWhiteboardMode={toggleWhiteboardMode}
         isSaving={isSaving}
       />
       

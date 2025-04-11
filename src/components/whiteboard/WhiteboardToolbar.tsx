@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import {
   Square,
   Circle,
@@ -16,38 +17,47 @@ import {
   Save,
   Undo,
   Redo,
-  Trash2
+  Trash2,
+  Layout,
+  Plus
 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 interface WhiteboardToolbarProps {
   activeTool: string;
+  whiteboardMode: 'default' | 'blank';
   onToolSelect: (tool: string) => void;
   onAddShape: (type: 'rect' | 'circle') => void;
   onAddStickyNote: () => void;
   onAddTaskCard: () => void;
   onAddText: () => void;
+  onAddSection: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onSave: () => void;
   onDelete: () => void;
+  onToggleWhiteboardMode: () => void;
   isSaving: boolean;
 }
 
 const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
   activeTool,
+  whiteboardMode,
   onToolSelect,
   onAddShape,
   onAddStickyNote,
   onAddTaskCard,
   onAddText,
+  onAddSection,
   onUndo,
   onRedo,
   onZoomIn,
   onZoomOut,
   onSave,
   onDelete,
+  onToggleWhiteboardMode,
   isSaving
 }) => {
   return (
@@ -99,6 +109,24 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
           label="Text"
           onClick={onAddText}
         />
+      </div>
+      
+      <div className="flex gap-1 items-center border-r pr-2 mr-2">
+        <ToolButton 
+          icon={<Plus size={16} />}
+          label="Add Section"
+          onClick={onAddSection}
+        />
+        <div className="flex items-center space-x-2 ml-1">
+          <Switch
+            id="whiteboard-mode"
+            checked={whiteboardMode === 'default'}
+            onCheckedChange={onToggleWhiteboardMode}
+          />
+          <Label htmlFor="whiteboard-mode" className="text-xs">
+            {whiteboardMode === 'default' ? 'Default Sections' : 'Blank Board'}
+          </Label>
+        </div>
       </div>
       
       <div className="flex gap-1 items-center border-r pr-2 mr-2">
