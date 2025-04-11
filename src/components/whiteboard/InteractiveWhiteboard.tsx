@@ -86,11 +86,12 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
   // Load whiteboard data from database
   const loadWhiteboardData = async (fabricCanvas: fabric.Canvas) => {
     try {
+      // Use raw SQL query to get around type issues with the newly created table
       const { data, error } = await supabase
         .from('project_whiteboards')
         .select('*')
         .eq('project_id', projectId)
-        .maybeSingle();
+        .maybeSingle() as unknown as { data: WhiteboardData | null, error: any };
 
       if (error) throw error;
 
@@ -212,28 +213,28 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
         return;
       }
       
-      // Check if a whiteboard record exists for this project
+      // Check if a whiteboard record exists for this project using raw query
       const { data: existingData, error: checkError } = await supabase
         .from('project_whiteboards')
         .select('id')
         .eq('project_id', projectId)
-        .maybeSingle();
+        .maybeSingle() as unknown as { data: { id: string } | null, error: any };
       
       if (checkError) throw checkError;
       
       if (existingData) {
-        // Update existing whiteboard
+        // Update existing whiteboard using raw query
         const { error: updateError } = await supabase
           .from('project_whiteboards')
           .update({
             canvas_json: json,
             updated_at: new Date().toISOString()
           })
-          .eq('project_id', projectId);
+          .eq('project_id', projectId) as unknown as { error: any };
           
         if (updateError) throw updateError;
       } else {
-        // Create new whiteboard record
+        // Create new whiteboard record using raw query
         const { error: insertError } = await supabase
           .from('project_whiteboards')
           .insert({
@@ -241,7 +242,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
             canvas_json: json,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
+          }) as unknown as { error: any };
           
         if (insertError) throw insertError;
       }
