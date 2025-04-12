@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useWhiteboardCanvas } from '@/hooks/useWhiteboardCanvas';
 import { useWhiteboardTools } from '@/hooks/useWhiteboardTools';
@@ -24,7 +23,6 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
     handleToolSelect,
     handleAddShape,
     handleAddStickyNote,
-    handleAddTaskCard,
     handleAddText,
     handleAddSection,
     handleUndo,
@@ -37,7 +35,6 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
     deleteSelectedObject
   } = useWhiteboardTools(projectId, canvas, canvasHistory, historyIndex, setHistoryIndex);
 
-  // Load whiteboard data when canvas and projectId are available
   useEffect(() => {
     if (canvas && projectId) {
       loadWhiteboardFromDatabase(canvas);
@@ -45,14 +42,13 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
   }, [canvas, projectId]);
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-full bg-gray-50">
       <WhiteboardToolbar 
         activeTool={activeTool}
         whiteboardMode={whiteboardMode}
         onToolSelect={handleToolSelect}
         onAddShape={(type) => handleAddShape(type)}
         onAddStickyNote={handleAddStickyNote}
-        onAddTaskCard={handleAddTaskCard}
         onAddText={handleAddText}
         onAddSection={handleAddSection}
         onUndo={handleUndo}
@@ -65,8 +61,13 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
         isSaving={isSaving}
       />
       
-      <div className="relative border rounded-lg shadow-lg overflow-hidden mt-4 bg-white">
-        <canvas ref={canvasRef} className="w-full"></canvas>
+      <div className="relative flex-1 m-4 overflow-hidden bg-white rounded-xl shadow-xl">
+        <div className="absolute inset-0 bg-grid-gray-200 [mask-image:linear-gradient(0deg,#fff,transparent)]">
+          <canvas 
+            ref={canvasRef} 
+            className="w-full h-full touch-pan"
+          />
+        </div>
       </div>
     </div>
   );

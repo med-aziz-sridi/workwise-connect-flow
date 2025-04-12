@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,7 +7,6 @@ import {
   Circle,
   Pencil,
   StickyNote,
-  CheckSquare,
   Move,
   ZoomIn,
   ZoomOut,
@@ -29,7 +27,6 @@ interface WhiteboardToolbarProps {
   onToolSelect: (tool: string) => void;
   onAddShape: (type: 'rect' | 'circle') => void;
   onAddStickyNote: () => void;
-  onAddTaskCard: () => void;
   onAddText: () => void;
   onAddSection: () => void;
   onUndo: () => void;
@@ -48,7 +45,6 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
   onToolSelect,
   onAddShape,
   onAddStickyNote,
-  onAddTaskCard,
   onAddText,
   onAddSection,
   onUndo,
@@ -61,7 +57,8 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
   isSaving
 }) => {
   return (
-    <div className="flex flex-wrap gap-1 bg-white p-2 rounded-lg border shadow-sm">
+    <div className="flex flex-wrap gap-2 bg-white p-2 rounded-lg border shadow-sm mx-4 mt-4">
+      {/* Selection Tools Group */}
       <div className="flex gap-1 items-center border-r pr-2 mr-2">
         <ToolButton 
           icon={<Move size={16} />}
@@ -82,7 +79,8 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
           onClick={() => onToolSelect('eraser')}
         />
       </div>
-      
+
+      {/* Creation Tools Group */}
       <div className="flex gap-1 items-center border-r pr-2 mr-2">
         <ToolButton 
           icon={<Square size={16} />}
@@ -100,17 +98,13 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
           onClick={onAddStickyNote}
         />
         <ToolButton 
-          icon={<CheckSquare size={16} />}
-          label="Task Card"
-          onClick={onAddTaskCard}
-        />
-        <ToolButton 
           icon={<Type size={16} />}
           label="Text"
           onClick={onAddText}
         />
       </div>
-      
+
+      {/* Workspace Tools Group */}
       <div className="flex gap-1 items-center border-r pr-2 mr-2">
         <ToolButton 
           icon={<Plus size={16} />}
@@ -122,13 +116,15 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             id="whiteboard-mode"
             checked={whiteboardMode === 'default'}
             onCheckedChange={onToggleWhiteboardMode}
+            className="data-[state=checked]:bg-blue-600"
           />
-          <Label htmlFor="whiteboard-mode" className="text-xs">
-            {whiteboardMode === 'default' ? 'Default Sections' : 'Blank Board'}
+          <Label htmlFor="whiteboard-mode" className="text-xs font-medium text-gray-600">
+            {whiteboardMode === 'default' ? 'Template' : 'Freeform'}
           </Label>
         </div>
       </div>
-      
+
+      {/* View Tools Group */}
       <div className="flex gap-1 items-center border-r pr-2 mr-2">
         <ToolButton 
           icon={<ZoomIn size={16} />}
@@ -141,7 +137,8 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
           onClick={onZoomOut}
         />
       </div>
-      
+
+      {/* History Tools Group */}
       <div className="flex gap-1 items-center border-r pr-2 mr-2">
         <ToolButton 
           icon={<Undo size={16} />}
@@ -154,19 +151,17 @@ const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
           onClick={onRedo}
         />
       </div>
-      
-      <div className="flex gap-1 items-center border-r pr-2 mr-2">
+
+      {/* Action Tools Group */}
+      <div className="flex gap-1 items-center">
         <ToolButton 
           icon={<Trash2 size={16} />}
           label="Delete"
           onClick={onDelete}
         />
-      </div>
-      
-      <div className="flex gap-1 items-center">
         <Button 
           size="sm" 
-          className="h-8" 
+          className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
           onClick={onSave}
           disabled={isSaving}
         >
@@ -192,13 +187,15 @@ const ToolButton: React.FC<ToolButtonProps> = ({ icon, label, active, onClick })
         <Button 
           variant={active ? "default" : "outline"} 
           size="sm" 
-          className={`h-8 ${active ? '' : 'bg-white'}`}
+          className={`h-8 ${active ? 'bg-blue-600 hover:bg-blue-700' : 'bg-white hover:bg-gray-50'}`}
           onClick={onClick}
         >
           {icon}
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent side="bottom" className="text-xs font-medium">
+        {label}
+      </TooltipContent>
     </Tooltip>
   );
 };
