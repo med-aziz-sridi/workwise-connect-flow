@@ -22,7 +22,7 @@ export interface ChecklistItem {
   id: string;
   text: string;
   comments: Comment[];
-  completed?: boolean;
+  completed: boolean;
 }
 
 interface Section {
@@ -35,54 +35,13 @@ export interface ChecklistTabsProps {
   sections: Section[];
   onSectionsChange: (sections: Section[]) => void;
   onAddComment: (sectionId: string, taskId: string, comment: Comment) => void;
-  
-  // For backward compatibility with existing usage
-  todoItems?: ChecklistItem[];
-  inProgressItems?: ChecklistItem[];
-  doneItems?: ChecklistItem[];
-  onUpdateSection?: (
-    section: 'todoItems' | 'inProgressItems' | 'doneItems', 
-    items: ChecklistItem[]
-  ) => Promise<void>;
 }
 
 const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
   sections = [],
   onSectionsChange,
   onAddComment,
-  // Backward compatibility props
-  todoItems,
-  inProgressItems,
-  doneItems,
-  onUpdateSection,
 }) => {
-  // Create sections from the old props format if needed
-  React.useEffect(() => {
-    if (todoItems || inProgressItems || doneItems) {
-      const convertedSections = [
-        {
-          id: 'todo',
-          title: 'To Do',
-          items: todoItems || []
-        },
-        {
-          id: 'in-progress',
-          title: 'In Progress',
-          items: inProgressItems || []
-        },
-        {
-          id: 'done',
-          title: 'Done',
-          items: doneItems || []
-        }
-      ];
-      
-      if (sections.length === 0) {
-        onSectionsChange?.(convertedSections);
-      }
-    }
-  }, [todoItems, inProgressItems, doneItems]);
-
   const [newSectionTitle, setNewSectionTitle] = React.useState('');
   const [newTaskTexts, setNewTaskTexts] = React.useState<Record<string, string>>({});
   const [selectedTask, setSelectedTask] = React.useState<{ sectionId: string; taskId: string } | null>(null);
@@ -98,11 +57,6 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
       const [movedSection] = reorderedSections.splice(source.index, 1);
       reorderedSections.splice(destination.index, 0, movedSection);
       onSectionsChange(reorderedSections);
-      
-      // Support for old props format
-      if (onUpdateSection) {
-        updateOldPropsFormat(reorderedSections);
-      }
     } else if (type === 'TASK') {
       const sourceSectionIndex = sections.findIndex(s => s.id === source.droppableId);
       const destSectionIndex = sections.findIndex(s => s.id === destination.droppableId);
@@ -119,11 +73,6 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
         const newSections = [...sections];
         newSections[sourceSectionIndex] = { ...sectionCopy, items };
         onSectionsChange(newSections);
-        
-        // Support for old props format
-        if (onUpdateSection) {
-          updateOldPropsFormat(newSections);
-        }
       } else {
         // Handle cross-section movement
         const sourceSection = { ...sections[sourceSectionIndex] };
@@ -142,33 +91,7 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
         newSections[sourceSectionIndex] = { ...sourceSection, items: newSourceItems };
         newSections[destSectionIndex] = { ...destSection, items: newDestItems };
         onSectionsChange(newSections);
-        
-        // Support for old props format
-        if (onUpdateSection) {
-          updateOldPropsFormat(newSections);
-        }
       }
-    }
-  };
-  
-  // Function to update the old props format when sections change
-  const updateOldPropsFormat = (updatedSections: Section[]) => {
-    if (!onUpdateSection) return;
-    
-    const todoSection = updatedSections.find(s => s.id === 'todo');
-    const inProgressSection = updatedSections.find(s => s.id === 'in-progress');
-    const doneSection = updatedSections.find(s => s.id === 'done');
-    
-    if (todoSection) {
-      onUpdateSection('todoItems', todoSection.items);
-    }
-    
-    if (inProgressSection) {
-      onUpdateSection('inProgressItems', inProgressSection.items);
-    }
-    
-    if (doneSection) {
-      onUpdateSection('doneItems', doneSection.items);
     }
   };
 
@@ -201,6 +124,7 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
       id: `task-${Date.now()}`,
       text,
       comments: [],
+      completed: false
     };
     const updatedSections = sections.map(section => 
       section.id === sectionId 
@@ -208,12 +132,6 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
         : section
     );
     onSectionsChange(updatedSections);
-    
-    // Support for old props format
-    if (onUpdateSection) {
-      updateOldPropsFormat(updatedSections);
-    }
-    
     setNewTaskTexts({ ...newTaskTexts, [sectionId]: '' });
   };
 

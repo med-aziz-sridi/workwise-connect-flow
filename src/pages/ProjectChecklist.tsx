@@ -133,10 +133,6 @@ const ProjectChecklist: React.FC = () => {
             sections={sections}
             onSectionsChange={handleSectionsChange}
             onAddComment={handleAddComment}
-            todoItems={checklistData.todoItems}
-            inProgressItems={checklistData.inProgressItems}
-            doneItems={checklistData.doneItems}
-            onUpdateSection={updateChecklistSection}
           />
         </CardContent>
       </Card>

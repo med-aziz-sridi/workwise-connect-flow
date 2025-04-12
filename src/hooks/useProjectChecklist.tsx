@@ -3,10 +3,19 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
-interface ChecklistItem {
+// Make sure this interface is compatible with ChecklistTabs.tsx
+export interface ChecklistItem {
   id: string;
   text: string;
   completed: boolean;
+  comments: Comment[];
+}
+
+export interface Comment {
+  id: string;
+  text: string;
+  author: string;
+  createdAt: Date;
 }
 
 interface ProjectChecklistData {
@@ -30,15 +39,16 @@ const convertJsonToChecklistItems = (jsonData: Json | null): ChecklistItem[] => 
     return [];
   }
   
-  // Map and validate each item
+  // Map and validate each item, making sure to include comments
   return jsonData.map(item => {
     // Ensure the item has the required properties
     if (typeof item === 'object' && item !== null && 
-        'id' in item && 'text' in item && 'completed' in item) {
+        'id' in item && 'text' in item) {
       return {
         id: String(item.id),
         text: String(item.text),
-        completed: Boolean(item.completed)
+        completed: 'completed' in item ? Boolean(item.completed) : false,
+        comments: Array.isArray(item.comments) ? item.comments : []
       };
     }
     
@@ -47,7 +57,8 @@ const convertJsonToChecklistItems = (jsonData: Json | null): ChecklistItem[] => 
     return {
       id: `generated-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       text: 'Unnamed item',
-      completed: false
+      completed: false,
+      comments: []
     };
   });
 };
