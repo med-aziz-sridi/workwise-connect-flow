@@ -1,4 +1,3 @@
-
 import { fabric } from 'fabric';
 import { WhiteboardSection } from '@/types/whiteboard';
 
@@ -27,8 +26,38 @@ export function addShape(canvas: fabric.Canvas, shapeType: 'rect' | 'circle') {
   }
   
   if (shape) {
-    canvas.add(shape);
-    canvas.setActiveObject(shape);
+    const text = new fabric.Textbox('Double-click to edit', {
+      left: 0,
+      top: 0,
+      fontSize: 16,
+      fontFamily: 'Arial',
+      fill: '#333333',
+      textAlign: 'center',
+      width: shapeType === 'rect' ? 100 : 100,
+      editingBorderColor: '#1e88e5',
+      cursorColor: '#1e88e5',
+    });
+    
+    if (shapeType === 'rect') {
+      text.set({
+        left: 0,
+        top: 40,
+      });
+    } else {
+      text.set({
+        left: -50,
+        top: -10,
+      });
+    }
+    
+    const group = new fabric.Group([shape, text], {
+      left: 100,
+      top: 100,
+      subTargetCheck: true,
+    });
+    
+    canvas.add(group);
+    canvas.setActiveObject(group);
     return true;
   }
   
@@ -39,7 +68,6 @@ export function addStickyNote(canvas: fabric.Canvas) {
   const colors = ['#fff8c5', '#d1f3d1', '#ffcccb', '#c5dbff', '#e2c5ff'];
   const randomColor = colors[Math.floor(Math.random() * colors.length)];
   
-  // Create container group for sticky note
   const rect = new fabric.Rect({
     width: 150,
     height: 150,
@@ -56,6 +84,8 @@ export function addStickyNote(canvas: fabric.Canvas) {
     fontSize: 16,
     fontFamily: 'Arial',
     fill: '#333333',
+    editingBorderColor: '#1e88e5',
+    cursorColor: '#1e88e5',
   });
   
   const group = new fabric.Group([rect, textbox], {
@@ -66,10 +96,22 @@ export function addStickyNote(canvas: fabric.Canvas) {
   
   canvas.add(group);
   canvas.setActiveObject(group);
+  
+  if (textbox.enterEditing) {
+    setTimeout(() => {
+      const activeObject = canvas.getActiveObject();
+      if (activeObject && activeObject.type === 'group') {
+        const textObj = activeObject.getObjects().find((o: any) => o.type === 'textbox');
+        if (textObj && textObj.enterEditing) {
+          textObj.enterEditing();
+          canvas.renderAll();
+        }
+      }
+    }, 100);
+  }
 }
 
 export function addTaskCard(canvas: fabric.Canvas, section?: string) {
-  // Create a more structured task card
   const card = new fabric.Rect({
     width: 200,
     height: 180,
@@ -126,7 +168,6 @@ export function addTaskCard(canvas: fabric.Canvas, section?: string) {
     fill: '#4b5563',
   });
   
-  // Add section info if provided
   const sectionInfo = section 
     ? new fabric.Textbox(`Section: ${section}`, {
         width: 180,
@@ -173,10 +214,16 @@ export function addText(canvas: fabric.Canvas) {
   
   canvas.add(text);
   canvas.setActiveObject(text);
+  
+  if (text.enterEditing) {
+    setTimeout(() => {
+      text.enterEditing();
+      canvas.renderAll();
+    }, 100);
+  }
 }
 
 export function addSection(canvas: fabric.Canvas, title: string, color: string, textColor: string, left: number, top: number) {
-  // Create background rectangle for the section
   const rect = new fabric.Rect({
     width: 250,
     height: 300,
@@ -187,7 +234,6 @@ export function addSection(canvas: fabric.Canvas, title: string, color: string, 
     stroke: '#e5e7eb',
   });
   
-  // Create section title
   const text = new fabric.Textbox(title, {
     top: 10,
     width: 230,
@@ -199,7 +245,6 @@ export function addSection(canvas: fabric.Canvas, title: string, color: string, 
     textAlign: 'center',
   });
   
-  // Add a plus button for adding tasks
   const addButton = new fabric.Textbox('+ Add Task', {
     top: 40,
     width: 230,
@@ -212,14 +257,12 @@ export function addSection(canvas: fabric.Canvas, title: string, color: string, 
     padding: 5,
   });
   
-  // Create group for the section
   const group = new fabric.Group([rect, text, addButton], {
     left: left,
     top: top,
     subTargetCheck: true,
   });
   
-  // Add custom properties
   group.toObject = (function(toObject) {
     return function() {
       return fabric.util.object.extend(toObject.call(this), {
@@ -234,6 +277,37 @@ export function addSection(canvas: fabric.Canvas, title: string, color: string, 
   
   canvas.add(group);
   return group;
+}
+
+export function addLine(canvas: fabric.Canvas, isArrow = false) {
+  const line = new fabric.Line([50, 50, 200, 200], {
+    stroke: '#000000',
+    strokeWidth: 2,
+    selectable: true,
+    strokeDashArray: isArrow ? undefined : [5, 5],
+  });
+  
+  if (isArrow) {
+    const triangle = new fabric.Triangle({
+      width: 15,
+      height: 15,
+      fill: '#000000',
+      left: 200,
+      top: 200,
+      angle: 45,
+    });
+    
+    const group = new fabric.Group([line, triangle], {
+      left: 100,
+      top: 100,
+    });
+    
+    canvas.add(group);
+    canvas.setActiveObject(group);
+  } else {
+    canvas.add(line);
+    canvas.setActiveObject(line);
+  }
 }
 
 export function createDefaultTaskSections(canvas: fabric.Canvas) {
@@ -257,7 +331,6 @@ export function createDefaultTaskSections(canvas: fabric.Canvas) {
 }
 
 export function createBlankWhiteboard(canvas: fabric.Canvas) {
-  // Just initialize an empty whiteboard without any sections
   canvas.clear();
   canvas.setBackgroundColor('#f8f9fa', canvas.renderAll.bind(canvas));
   canvas.renderAll();

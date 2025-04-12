@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { fabric } from 'fabric';
 import { useToast } from '@/components/ui/use-toast';
@@ -8,6 +7,7 @@ import {
   addTaskCard, 
   addText,
   addSection,
+  addLine,
   createDefaultTaskSections,
   createBlankWhiteboard
 } from '@/components/whiteboard/WhiteboardShapes';
@@ -125,6 +125,15 @@ export function useWhiteboardTools(
     
     if (canvas.fire) {
       canvas.fire('object:added', { target: section });
+    }
+  };
+
+  // Add a method to handle adding lines and arrows
+  const handleAddLine = (isArrow: boolean = false) => {
+    if (!canvas) return;
+    addLine(canvas, isArrow);
+    if (canvas.fire) {
+      canvas.fire('object:added');
     }
   };
 
@@ -266,6 +275,7 @@ export function useWhiteboardTools(
     handleAddTaskCard,
     handleAddText,
     handleAddSection,
+    handleAddLine,
     handleUndo,
     handleRedo,
     handleZoomIn,

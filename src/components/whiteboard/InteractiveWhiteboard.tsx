@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useWhiteboardCanvas } from '@/hooks/useWhiteboardCanvas';
 import { useWhiteboardTools } from '@/hooks/useWhiteboardTools';
@@ -25,6 +26,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
     handleAddStickyNote,
     handleAddText,
     handleAddSection,
+    handleAddLine,
     handleUndo,
     handleRedo,
     handleZoomIn,
@@ -51,6 +53,7 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
         onAddStickyNote={handleAddStickyNote}
         onAddText={handleAddText}
         onAddSection={handleAddSection}
+        onAddLine={handleAddLine}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onZoomIn={handleZoomIn}
