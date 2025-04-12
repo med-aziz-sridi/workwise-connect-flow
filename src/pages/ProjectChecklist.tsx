@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProjectInfo from '@/components/project-checklist/ProjectInfo';
-import ChecklistTabs from '@/components/project-checklist/ChecklistTabs';
+import ChecklistTabs, { ChecklistItem, Comment } from '@/components/project-checklist/ChecklistTabs';
 import { useProjectChecklist } from '@/hooks/useProjectChecklist';
 
 const ProjectChecklist: React.FC = () => {
@@ -22,6 +22,23 @@ const ProjectChecklist: React.FC = () => {
     isLoading,
     updateChecklistSection
   } = useProjectChecklist(projectId);
+
+  const [sections, setSections] = useState<Array<{id: string; title: string; items: ChecklistItem[]}>>([
+    { id: 'todo', title: 'To Do', items: [] },
+    { id: 'in-progress', title: 'In Progress', items: [] },
+    { id: 'done', title: 'Done', items: [] },
+  ]);
+
+  // Initialize sections from checklistData
+  useEffect(() => {
+    if (checklistData) {
+      setSections([
+        { id: 'todo', title: 'To Do', items: checklistData.todoItems },
+        { id: 'in-progress', title: 'In Progress', items: checklistData.inProgressItems },
+        { id: 'done', title: 'Done', items: checklistData.doneItems },
+      ]);
+    }
+  }, [checklistData]);
 
   useEffect(() => {
     if (!projectId || !user) return;
@@ -40,6 +57,41 @@ const ProjectChecklist: React.FC = () => {
     
     fetchProject();
   }, [projectId, user, jobs]);
+
+  const handleSectionsChange = (updatedSections: Array<{id: string; title: string; items: ChecklistItem[]}>) => {
+    setSections(updatedSections);
+    
+    // Map back to the original format for the hook
+    const todoItems = updatedSections.find(s => s.id === 'todo')?.items || [];
+    const inProgressItems = updatedSections.find(s => s.id === 'in-progress')?.items || [];
+    const doneItems = updatedSections.find(s => s.id === 'done')?.items || [];
+    
+    updateChecklistSection('todoItems', todoItems);
+    updateChecklistSection('inProgressItems', inProgressItems);
+    updateChecklistSection('doneItems', doneItems);
+  };
+
+  const handleAddComment = (sectionId: string, taskId: string, comment: Comment) => {
+    const updatedSections = sections.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          items: section.items.map(item => {
+            if (item.id === taskId) {
+              return {
+                ...item,
+                comments: [...item.comments, comment]
+              };
+            }
+            return item;
+          })
+        };
+      }
+      return section;
+    });
+    
+    handleSectionsChange(updatedSections);
+  };
 
   if (isLoading) {
     return (
@@ -78,6 +130,9 @@ const ProjectChecklist: React.FC = () => {
         </CardHeader>
         <CardContent>
           <ChecklistTabs
+            sections={sections}
+            onSectionsChange={handleSectionsChange}
+            onAddComment={handleAddComment}
             todoItems={checklistData.todoItems}
             inProgressItems={checklistData.inProgressItems}
             doneItems={checklistData.doneItems}

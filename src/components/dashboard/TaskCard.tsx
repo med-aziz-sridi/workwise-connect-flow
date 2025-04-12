@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Task } from '@/components/project-checklist/ChecklistTabs';
+import { Task } from '@/types/task';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,

@@ -1,19 +1,28 @@
+
 import React from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-interface Comment {
+export interface Comment {
   id: string;
   text: string;
   author: string;
   createdAt: Date;
 }
 
-interface ChecklistItem {
+export interface ChecklistItem {
   id: string;
   text: string;
   comments: Comment[];
+  completed?: boolean;
 }
 
 interface Section {
@@ -22,17 +31,58 @@ interface Section {
   items: ChecklistItem[];
 }
 
-interface ChecklistTabsProps {
+export interface ChecklistTabsProps {
   sections: Section[];
   onSectionsChange: (sections: Section[]) => void;
   onAddComment: (sectionId: string, taskId: string, comment: Comment) => void;
+  
+  // For backward compatibility with existing usage
+  todoItems?: ChecklistItem[];
+  inProgressItems?: ChecklistItem[];
+  doneItems?: ChecklistItem[];
+  onUpdateSection?: (
+    section: 'todoItems' | 'inProgressItems' | 'doneItems', 
+    items: ChecklistItem[]
+  ) => Promise<void>;
 }
 
 const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
   sections = [],
   onSectionsChange,
   onAddComment,
+  // Backward compatibility props
+  todoItems,
+  inProgressItems,
+  doneItems,
+  onUpdateSection,
 }) => {
+  // Create sections from the old props format if needed
+  React.useEffect(() => {
+    if (todoItems || inProgressItems || doneItems) {
+      const convertedSections = [
+        {
+          id: 'todo',
+          title: 'To Do',
+          items: todoItems || []
+        },
+        {
+          id: 'in-progress',
+          title: 'In Progress',
+          items: inProgressItems || []
+        },
+        {
+          id: 'done',
+          title: 'Done',
+          items: doneItems || []
+        }
+      ];
+      
+      if (sections.length === 0) {
+        onSectionsChange?.(convertedSections);
+      }
+    }
+  }, [todoItems, inProgressItems, doneItems]);
+
   const [newSectionTitle, setNewSectionTitle] = React.useState('');
   const [newTaskTexts, setNewTaskTexts] = React.useState<Record<string, string>>({});
   const [selectedTask, setSelectedTask] = React.useState<{ sectionId: string; taskId: string } | null>(null);
@@ -48,6 +98,11 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
       const [movedSection] = reorderedSections.splice(source.index, 1);
       reorderedSections.splice(destination.index, 0, movedSection);
       onSectionsChange(reorderedSections);
+      
+      // Support for old props format
+      if (onUpdateSection) {
+        updateOldPropsFormat(reorderedSections);
+      }
     } else if (type === 'TASK') {
       const sourceSectionIndex = sections.findIndex(s => s.id === source.droppableId);
       const destSectionIndex = sections.findIndex(s => s.id === destination.droppableId);
@@ -64,6 +119,11 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
         const newSections = [...sections];
         newSections[sourceSectionIndex] = { ...sectionCopy, items };
         onSectionsChange(newSections);
+        
+        // Support for old props format
+        if (onUpdateSection) {
+          updateOldPropsFormat(newSections);
+        }
       } else {
         // Handle cross-section movement
         const sourceSection = { ...sections[sourceSectionIndex] };
@@ -82,7 +142,33 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
         newSections[sourceSectionIndex] = { ...sourceSection, items: newSourceItems };
         newSections[destSectionIndex] = { ...destSection, items: newDestItems };
         onSectionsChange(newSections);
+        
+        // Support for old props format
+        if (onUpdateSection) {
+          updateOldPropsFormat(newSections);
+        }
       }
+    }
+  };
+  
+  // Function to update the old props format when sections change
+  const updateOldPropsFormat = (updatedSections: Section[]) => {
+    if (!onUpdateSection) return;
+    
+    const todoSection = updatedSections.find(s => s.id === 'todo');
+    const inProgressSection = updatedSections.find(s => s.id === 'in-progress');
+    const doneSection = updatedSections.find(s => s.id === 'done');
+    
+    if (todoSection) {
+      onUpdateSection('todoItems', todoSection.items);
+    }
+    
+    if (inProgressSection) {
+      onUpdateSection('inProgressItems', inProgressSection.items);
+    }
+    
+    if (doneSection) {
+      onUpdateSection('doneItems', doneSection.items);
     }
   };
 
@@ -92,8 +178,21 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
       title: newSectionTitle || 'New Section',
       items: [],
     };
-    onSectionsChange([...sections, newSection]);
+    const updatedSections = [...sections, newSection];
+    onSectionsChange(updatedSections);
     setNewSectionTitle('');
+  };
+  
+  const handleEditSection = (sectionId: string, newTitle: string) => {
+    const updatedSections = sections.map(section => 
+      section.id === sectionId ? { ...section, title: newTitle } : section
+    );
+    onSectionsChange(updatedSections);
+  };
+  
+  const handleDeleteSection = (sectionId: string) => {
+    const updatedSections = sections.filter(section => section.id !== sectionId);
+    onSectionsChange(updatedSections);
   };
 
   const handleAddTask = (sectionId: string) => {
@@ -109,6 +208,12 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
         : section
     );
     onSectionsChange(updatedSections);
+    
+    // Support for old props format
+    if (onUpdateSection) {
+      updateOldPropsFormat(updatedSections);
+    }
+    
     setNewTaskTexts({ ...newTaskTexts, [sectionId]: '' });
   };
 
@@ -152,12 +257,30 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
                         className="p-4 font-semibold border-b flex justify-between items-center"
                       >
                         {section.title}
-                        <button 
-                          className="text-gray-400 hover:text-gray-600"
-                          aria-label="Section options"
-                        >
-                          ⋮
-                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button 
+                              className="text-gray-400 hover:text-gray-600"
+                              aria-label="Section options"
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              const newTitle = prompt('Enter new section title', section.title);
+                              if (newTitle) handleEditSection(section.id, newTitle);
+                            }}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteSection(section.id)}
+                              className="text-red-600"
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                       
                       <Droppable droppableId={section.id} type="TASK">
