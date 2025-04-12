@@ -1,55 +1,126 @@
 
-import React, { useEffect } from 'react';
-import { useWhiteboardCanvas } from '@/hooks/useWhiteboardCanvas';
-import { useWhiteboardTools } from '@/hooks/whiteboard/useWhiteboardTools';
+import React, { useRef, useEffect } from 'react';
+import { useWhiteboardTools } from '@/hooks/useWhiteboardTools';
 import WhiteboardToolbar from './WhiteboardToolbar';
+import { toast } from 'sonner';
 
 interface InteractiveWhiteboardProps {
   projectId?: string;
 }
 
 const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId }) => {
-  const { 
-    canvas, 
-    canvasRef, 
-    canvasHistory, 
-    historyIndex, 
-    setHistoryIndex 
-  } = useWhiteboardCanvas();
-  
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const {
-    activeTool,
-    isSaving,
+    canvas,
+    isLoading,
+    setupCanvas,
+    currentMode,
+    setCurrentMode,
+    isDrawing,
+    setIsDrawing,
+    activateTool,
+    deactivateAllTools,
+    addShape,
+    selectShape,
+    deleteSelection,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    saveCanvas,
+    canvasChanged,
     whiteboardMode,
-    handleToolSelect,
-    handleAddShape,
-    handleAddStickyNote,
-    handleAddText,
-    handleAddSection,
-    handleAddLine,
-    handleUndo,
-    handleRedo,
-    handleZoomIn,
-    handleZoomOut,
-    toggleWhiteboardMode,
-    saveWhiteboardToDatabase,
-    loadWhiteboardFromDatabase,
-    deleteSelectedObject
-  } = useWhiteboardTools(projectId, canvas, canvasHistory, historyIndex, setHistoryIndex);
+    toggleWhiteboardMode
+  } = useWhiteboardTools(projectId || '');
 
   useEffect(() => {
-    if (canvas && projectId) {
-      loadWhiteboardFromDatabase(canvas);
+    if (!canvasRef.current) return;
+    
+    const initCanvas = async () => {
+      try {
+        const cleanup = await setupCanvas(canvasRef.current);
+        return cleanup;
+      } catch (error) {
+        console.error('Failed to initialize canvas:', error);
+        toast.error('Failed to load whiteboard. Please refresh the page.');
+      }
+    };
+    
+    const cleanupFn = initCanvas();
+    
+    return () => {
+      cleanupFn.then(cleanup => {
+        if (cleanup) cleanup();
+      });
+    };
+  }, [setupCanvas]);
+
+  // Handler functions for the toolbar
+  const handleToolSelect = (tool: string) => {
+    if (tool === 'select') {
+      deactivateAllTools();
+      selectShape();
+    } else if (tool === 'pencil' || tool === 'eraser') {
+      activateTool(tool);
     }
-  }, [canvas, projectId]);
+  };
+
+  const handleAddShape = (type: 'rect' | 'circle') => {
+    addShape(type);
+  };
+
+  const handleAddStickyNote = () => {
+    if (canvas) {
+      setCurrentMode('sticky');
+    }
+  };
+
+  const handleAddText = () => {
+    if (canvas) {
+      setCurrentMode('text');
+    }
+  };
+
+  const handleAddSection = () => {
+    if (canvas) {
+      setCurrentMode('section');
+    }
+  };
+
+  const handleAddLine = (isArrow: boolean = false) => {
+    if (canvas) {
+      setCurrentMode(isArrow ? 'arrow' : 'line');
+    }
+  };
+
+  const handleUndo = () => {
+    // Handled by navigation hook
+    if (canvas) {
+      setCurrentMode('undo');
+    }
+  };
+
+  const handleRedo = () => {
+    // Handled by navigation hook
+    if (canvas) {
+      setCurrentMode('redo');
+    }
+  };
+
+  const handleZoomIn = () => {
+    zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    zoomOut();
+  };
 
   return (
     <div className="flex flex-col w-full h-full bg-gray-50">
       <WhiteboardToolbar 
-        activeTool={activeTool}
+        activeTool={currentMode}
         whiteboardMode={whiteboardMode}
         onToolSelect={handleToolSelect}
-        onAddShape={(type) => handleAddShape(type)}
+        onAddShape={handleAddShape}
         onAddStickyNote={handleAddStickyNote}
         onAddText={handleAddText}
         onAddSection={handleAddSection}
@@ -58,10 +129,10 @@ const InteractiveWhiteboard: React.FC<InteractiveWhiteboardProps> = ({ projectId
         onRedo={handleRedo}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
-        onSave={saveWhiteboardToDatabase}
-        onDelete={deleteSelectedObject}
+        onSave={saveCanvas}
+        onDelete={deleteSelection}
         onToggleWhiteboardMode={toggleWhiteboardMode}
-        isSaving={isSaving}
+        isSaving={isLoading}
       />
       
       <div className="relative flex-1 m-4 overflow-hidden bg-white rounded-xl shadow-xl">
