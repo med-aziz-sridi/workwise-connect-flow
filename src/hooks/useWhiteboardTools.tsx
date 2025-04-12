@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { fabric } from 'fabric';
 import { useToast } from '@/components/ui/use-toast';
@@ -94,9 +95,8 @@ export function useWhiteboardTools(
     const activeObject = canvas.getActiveObject();
     if (activeObject) {
       canvas.remove(activeObject);
-      if (canvas.fire) {
-        canvas.fire('object:removed', { target: activeObject });
-      }
+      canvas.fire('object:removed', { target: activeObject });
+      canvas.renderAll();
     }
   };
 
@@ -123,18 +123,16 @@ export function useWhiteboardTools(
       100
     );
     
-    if (canvas.fire) {
-      canvas.fire('object:added', { target: section });
-    }
+    canvas.fire('object:added', { target: section });
+    canvas.renderAll();
   };
 
   // Add a method to handle adding lines and arrows
   const handleAddLine = (isArrow: boolean = false) => {
     if (!canvas) return;
     addLine(canvas, isArrow);
-    if (canvas.fire) {
-      canvas.fire('object:added');
-    }
+    canvas.fire('object:added');
+    canvas.renderAll();
   };
 
   // Toggle between default sections and blank whiteboard
@@ -148,6 +146,8 @@ export function useWhiteboardTools(
       createDefaultTaskSections(canvas);
       setWhiteboardMode('default');
     }
+    
+    canvas.renderAll();
   };
 
   // Save whiteboard to database
@@ -217,6 +217,7 @@ export function useWhiteboardTools(
         // Initialize with default sections for a new whiteboard
         createDefaultTaskSections(fabricCanvas);
         setWhiteboardMode('default');
+        fabricCanvas.renderAll();
       }
     } catch (error) {
       console.error('Error loading whiteboard:', error);
@@ -229,6 +230,7 @@ export function useWhiteboardTools(
       // Initialize with default sections even on error
       createDefaultTaskSections(fabricCanvas);
       setWhiteboardMode('default');
+      fabricCanvas.renderAll();
     }
   };
 
@@ -236,33 +238,29 @@ export function useWhiteboardTools(
   const handleAddShape = (type: 'rect' | 'circle') => {
     if (!canvas) return;
     addShape(canvas, type);
-    if (canvas.fire) {
-      canvas.fire('object:added');
-    }
+    canvas.fire('object:added');
+    canvas.renderAll();
   };
 
   const handleAddStickyNote = () => {
     if (!canvas) return;
     addStickyNote(canvas);
-    if (canvas.fire) {
-      canvas.fire('object:added');
-    }
+    canvas.fire('object:added');
+    canvas.renderAll();
   };
 
   const handleAddTaskCard = () => {
     if (!canvas) return;
     addTaskCard(canvas);
-    if (canvas.fire) {
-      canvas.fire('object:added');
-    }
+    canvas.fire('object:added');
+    canvas.renderAll();
   };
 
   const handleAddText = () => {
     if (!canvas) return;
     addText(canvas);
-    if (canvas.fire) {
-      canvas.fire('object:added');
-    }
+    canvas.fire('object:added');
+    canvas.renderAll();
   };
 
   return {

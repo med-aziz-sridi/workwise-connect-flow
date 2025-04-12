@@ -1,15 +1,23 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreVertical } from 'lucide-react';
+import { Pencil, Trash2, MoreVertical, PlusCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 export interface Comment {
   id: string;
@@ -42,10 +50,13 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
   onSectionsChange,
   onAddComment,
 }) => {
-  const [newSectionTitle, setNewSectionTitle] = React.useState('');
-  const [newTaskTexts, setNewTaskTexts] = React.useState<Record<string, string>>({});
-  const [selectedTask, setSelectedTask] = React.useState<{ sectionId: string; taskId: string } | null>(null);
-  const [newComment, setNewComment] = React.useState('');
+  const [newSectionTitle, setNewSectionTitle] = useState('');
+  const [newTaskTexts, setNewTaskTexts] = useState<Record<string, string>>({});
+  const [selectedTask, setSelectedTask] = useState<{ sectionId: string; taskId: string } | null>(null);
+  const [newComment, setNewComment] = useState('');
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [editedSectionTitle, setEditedSectionTitle] = useState('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !sections) return;
@@ -96,9 +107,11 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
   };
 
   const handleAddSection = () => {
+    if (!newSectionTitle.trim()) return;
+    
     const newSection: Section = {
       id: `section-${Date.now()}`,
-      title: newSectionTitle || 'New Section',
+      title: newSectionTitle,
       items: [],
     };
     const updatedSections = [...sections, newSection];
@@ -106,11 +119,22 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
     setNewSectionTitle('');
   };
   
-  const handleEditSection = (sectionId: string, newTitle: string) => {
+  const openEditDialog = (sectionId: string, currentTitle: string) => {
+    setEditingSectionId(sectionId);
+    setEditedSectionTitle(currentTitle);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleEditSection = () => {
+    if (!editingSectionId || !editedSectionTitle.trim()) return;
+    
     const updatedSections = sections.map(section => 
-      section.id === sectionId ? { ...section, title: newTitle } : section
+      section.id === editingSectionId ? { ...section, title: editedSectionTitle } : section
     );
     onSectionsChange(updatedSections);
+    setIsEditDialogOpen(false);
+    setEditingSectionId(null);
+    setEditedSectionTitle('');
   };
   
   const handleDeleteSection = (sectionId: string) => {
@@ -119,13 +143,16 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
   };
 
   const handleAddTask = (sectionId: string) => {
-    const text = newTaskTexts[sectionId] || 'New Task';
+    const text = newTaskTexts[sectionId]?.trim();
+    if (!text) return;
+    
     const newTask: ChecklistItem = {
       id: `task-${Date.now()}`,
       text,
       comments: [],
       completed: false
     };
+    
     const updatedSections = sections.map(section => 
       section.id === sectionId 
         ? { ...section, items: [...section.items, newTask] }
@@ -147,6 +174,43 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
 
     onAddComment(selectedTask.sectionId, selectedTask.taskId, comment);
     setNewComment('');
+  };
+
+  const handleDeleteTask = (sectionId: string, taskId: string) => {
+    const updatedSections = sections.map(section => 
+      section.id === sectionId 
+        ? { ...section, items: section.items.filter(item => item.id !== taskId) }
+        : section
+    );
+    onSectionsChange(updatedSections);
+  };
+
+  const handleToggleTaskCompletion = (sectionId: string, taskId: string, completed: boolean) => {
+    const updatedSections = sections.map(section => 
+      section.id === sectionId 
+        ? { 
+            ...section, 
+            items: section.items.map(item => 
+              item.id === taskId ? { ...item, completed } : item
+            ) 
+          }
+        : section
+    );
+    onSectionsChange(updatedSections);
+  };
+
+  const handleUpdateTaskText = (sectionId: string, taskId: string, text: string) => {
+    const updatedSections = sections.map(section => 
+      section.id === sectionId 
+        ? { 
+            ...section, 
+            items: section.items.map(item => 
+              item.id === taskId ? { ...item, text } : item
+            ) 
+          }
+        : section
+    );
+    onSectionsChange(updatedSections);
   };
 
   return (
@@ -174,7 +238,7 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
                         {...provided.dragHandleProps}
                         className="p-4 font-semibold border-b flex justify-between items-center"
                       >
-                        {section.title}
+                        <span>{section.title}</span>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button 
@@ -185,16 +249,15 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                              const newTitle = prompt('Enter new section title', section.title);
-                              if (newTitle) handleEditSection(section.id, newTitle);
-                            }}>
+                            <DropdownMenuItem onClick={() => openEditDialog(section.id, section.title)}>
+                              <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDeleteSection(section.id)}
                               className="text-red-600"
                             >
+                              <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -215,20 +278,38 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    className="bg-white p-3 mb-2 rounded shadow hover:shadow-md transition-shadow cursor-pointer"
-                                    onClick={() => setSelectedTask({ 
-                                      sectionId: section.id, 
-                                      taskId: item.id 
-                                    })}
-                                    role="button"
-                                    aria-label={`Task: ${item.text}`}
+                                    className="bg-white p-3 mb-2 rounded shadow hover:shadow-md transition-shadow"
                                   >
-                                    <div className="text-gray-800">{item.text}</div>
-                                    {item.comments.length > 0 && (
-                                      <div className="text-sm text-gray-500 mt-1">
-                                        {item.comments.length} 💬
+                                    <div className="flex items-start gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={item.completed}
+                                        onChange={(e) => handleToggleTaskCompletion(section.id, item.id, e.target.checked)}
+                                        className="mt-1"
+                                      />
+                                      <div className="flex-1">
+                                        <input
+                                          value={item.text}
+                                          onChange={(e) => handleUpdateTaskText(section.id, item.id, e.target.value)}
+                                          className={`w-full bg-transparent border-none p-0 focus:ring-0 ${item.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}
+                                        />
+                                        {item.comments.length > 0 && (
+                                          <div 
+                                            className="text-sm text-gray-500 mt-1 cursor-pointer"
+                                            onClick={() => setSelectedTask({ sectionId: section.id, taskId: item.id })}
+                                          >
+                                            {item.comments.length} 💬
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
+                                      <button
+                                        onClick={() => handleDeleteTask(section.id, item.id)}
+                                        className="text-red-500 hover:text-red-700"
+                                        aria-label="Delete task"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </div>
                                   </div>
                                 )}
                               </Draggable>
@@ -236,24 +317,27 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
                             {provided.placeholder}
                             
                             <div className="mt-2">
-                              <Input
-                                value={newTaskTexts[section.id] || ''}
-                                onChange={(e) => setNewTaskTexts({ 
-                                  ...newTaskTexts, 
-                                  [section.id]: e.target.value 
-                                })}
-                                placeholder="Add a task"
-                                onKeyPress={(e) => e.key === 'Enter' && handleAddTask(section.id)}
-                                aria-label="Add new task input"
-                              />
-                              <Button
-                                variant="ghost"
-                                className="w-full mt-2"
-                                onClick={() => handleAddTask(section.id)}
-                                aria-label="Add task button"
-                              >
-                                Add Task
-                              </Button>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={newTaskTexts[section.id] || ''}
+                                  onChange={(e) => setNewTaskTexts({ 
+                                    ...newTaskTexts, 
+                                    [section.id]: e.target.value 
+                                  })}
+                                  placeholder="Add a task"
+                                  onKeyPress={(e) => e.key === 'Enter' && handleAddTask(section.id)}
+                                  aria-label="Add new task input"
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleAddTask(section.id)}
+                                  aria-label="Add task button"
+                                  disabled={!newTaskTexts[section.id]?.trim()}
+                                >
+                                  <PlusCircle size={16} />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -265,30 +349,66 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
               {provided.placeholder}
               
               <div className="bg-white/50 p-4 rounded-lg w-72 flex-shrink-0">
-                <Input
-                  value={newSectionTitle}
-                  onChange={(e) => setNewSectionTitle(e.target.value)}
-                  placeholder="New section title"
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddSection()}
-                  aria-label="Add new section input"
-                />
-                <Button 
-                  className="w-full mt-2" 
-                  onClick={handleAddSection}
-                  aria-label="Add section button"
-                >
-                  Add Section
-                </Button>
+                <div className="flex gap-2">
+                  <Input
+                    value={newSectionTitle}
+                    onChange={(e) => setNewSectionTitle(e.target.value)}
+                    placeholder="New section title"
+                    onKeyPress={(e) => e.key === 'Enter' && newSectionTitle.trim() && handleAddSection()}
+                    aria-label="Add new section input"
+                  />
+                  <Button 
+                    size="sm"
+                    onClick={handleAddSection}
+                    aria-label="Add section button"
+                    disabled={!newSectionTitle.trim()}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}
         </Droppable>
       </DragDropContext>
 
+      {/* Edit Section Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Section</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={editedSectionTitle}
+              onChange={(e) => setEditedSectionTitle(e.target.value)}
+              placeholder="Section title"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleEditSection();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button 
+              onClick={handleEditSection}
+              disabled={!editedSectionTitle.trim()}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Comment Modal */}
       {selectedTask && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={() => setSelectedTask(null)}
           role="dialog"
           aria-label="Task comments dialog"
@@ -323,11 +443,12 @@ const ChecklistTabs: React.FC<ChecklistTabsProps> = ({
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Write a comment..."
-                onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit()}
+                onKeyPress={(e) => e.key === 'Enter' && newComment.trim() && handleCommentSubmit()}
                 aria-label="Write comment input"
               />
               <Button 
                 onClick={handleCommentSubmit}
+                disabled={!newComment.trim()}
                 aria-label="Add comment button"
               >
                 Add
