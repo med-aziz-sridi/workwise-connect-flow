@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import { Pencil, Trash2, MoreVertical, PlusCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SectionHeader } from './section/SectionHeader';
+import { TaskList } from './section/TaskList';
+import { AddTaskInput } from './section/AddTaskInput';
 
 interface SectionProps {
   section: {
@@ -54,35 +57,12 @@ const Section: React.FC<SectionProps> = ({
           role="group"
           aria-label={`Section: ${section.title}`}
         >
-          <div
-            {...provided.dragHandleProps}
-            className="p-4 font-semibold border-b flex justify-between items-center"
-          >
-            <span>{section.title}</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button 
-                  className="text-gray-400 hover:text-gray-600"
-                  aria-label="Section options"
-                >
-                  <MoreVertical size={16} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openEditDialog(section.id, section.title)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handleDeleteSection(section.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <SectionHeader 
+            title={section.title}
+            dragHandleProps={provided.dragHandleProps}
+            onEdit={() => openEditDialog(section.id, section.title)}
+            onDelete={() => handleDeleteSection(section.id)}
+          />
           
           <TaskList 
             section={section} 
@@ -92,68 +72,18 @@ const Section: React.FC<SectionProps> = ({
             setSelectedTask={setSelectedTask}
           />
           
-          <div className="mt-2 p-2">
-            <div className="flex gap-2">
-              <Input
-                value={newTaskTexts[section.id] || ''}
-                onChange={(e) => setNewTaskTexts({ 
-                  ...newTaskTexts, 
-                  [section.id]: e.target.value 
-                })}
-                placeholder="Add a task"
-                onKeyPress={(e) => e.key === 'Enter' && handleAddTask(section.id)}
-                aria-label="Add new task input"
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleAddTask(section.id)}
-                aria-label="Add task button"
-                disabled={!newTaskTexts[section.id]?.trim()}
-              >
-                <PlusCircle size={16} />
-              </Button>
-            </div>
-          </div>
+          <AddTaskInput
+            sectionId={section.id}
+            value={newTaskTexts[section.id] || ''}
+            onChange={(value) => setNewTaskTexts({ 
+              ...newTaskTexts, 
+              [section.id]: value 
+            })}
+            onAddTask={() => handleAddTask(section.id)}
+          />
         </div>
       )}
     </Draggable>
-  );
-};
-
-interface TaskListProps {
-  section: {
-    id: string;
-    items: ChecklistItem[];
-  };
-  handleDeleteTask: (sectionId: string, taskId: string) => void;
-  handleToggleTaskCompletion: (sectionId: string, taskId: string, completed: boolean) => void;
-  handleUpdateTaskText: (sectionId: string, taskId: string, text: string) => void;
-  setSelectedTask: (task: { sectionId: string; taskId: string } | null) => void;
-}
-
-const TaskList: React.FC<TaskListProps> = ({
-  section,
-  handleDeleteTask,
-  handleToggleTaskCompletion,
-  handleUpdateTaskText,
-  setSelectedTask
-}) => {
-  return (
-    <div className="p-2 min-h-[100px]">
-      {section.items.map((item, taskIndex) => (
-        <TaskItem
-          key={item.id}
-          item={item}
-          taskIndex={taskIndex}
-          sectionId={section.id}
-          handleDeleteTask={handleDeleteTask}
-          handleToggleTaskCompletion={handleToggleTaskCompletion}
-          handleUpdateTaskText={handleUpdateTaskText}
-          setSelectedTask={setSelectedTask}
-        />
-      ))}
-    </div>
   );
 };
 

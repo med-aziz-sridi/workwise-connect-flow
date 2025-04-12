@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { fabric } from 'fabric';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { loadWhiteboardData, saveWhiteboardData } from '@/services/whiteboardService';
 import { createDefaultTaskSections } from '@/components/whiteboard/WhiteboardShapes';
 
@@ -11,20 +11,17 @@ export function useWhiteboardStorage(
 ) {
   const [lastSavedJson, setLastSavedJson] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
-  // Save whiteboard to database
-  const saveWhiteboardToDatabase = async () => {
+  // Save whiteboard to database with debounce logic
+  const saveWhiteboardToDatabase = useCallback(async () => {
     if (!canvas || !projectId) {
       if (!projectId) {
-        toast({
-          title: "Project ID missing",
-          description: "Cannot save without a project ID",
-          variant: "destructive",
-        });
+        toast("Project ID missing, cannot save whiteboard");
       }
       return;
     }
+    
+    if (isSaving) return;
     
     setIsSaving(true);
     
@@ -33,42 +30,26 @@ export function useWhiteboardStorage(
       
       // Only save if there are changes
       if (json === lastSavedJson) {
-        toast({
-          title: "No changes to save",
-          description: "Your whiteboard is already up to date",
-        });
+        toast("No changes to save");
         setIsSaving(false);
         return;
       }
       
       await saveWhiteboardData(projectId, json);
-      
       setLastSavedJson(json);
-      
-      toast({
-        title: "Whiteboard saved",
-        description: "Your changes have been saved successfully",
-      });
+      toast("Whiteboard saved successfully");
     } catch (error) {
       console.error('Error saving whiteboard:', error);
-      toast({
-        title: "Error saving whiteboard",
-        description: "There was an error saving your changes",
-        variant: "destructive",
-      });
+      toast("Error saving whiteboard");
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [canvas, projectId, lastSavedJson, isSaving]);
 
   // Load whiteboard from database
-  const loadWhiteboardFromDatabase = async (fabricCanvas: fabric.Canvas) => {
+  const loadWhiteboardFromDatabase = useCallback(async (fabricCanvas: fabric.Canvas) => {
     if (!projectId) {
-      toast({
-        title: "Project ID missing",
-        description: "Cannot load without a project ID",
-        variant: "destructive",
-      });
+      toast("Project ID missing, cannot load whiteboard");
       return;
     }
     
@@ -83,35 +64,23 @@ export function useWhiteboardStorage(
         fabricCanvas.loadFromJSON(jsonData, () => {
           fabricCanvas.renderAll();
           setLastSavedJson(jsonData);
-          
-          toast({
-            title: "Whiteboard loaded",
-            description: "Your project whiteboard has been loaded",
-          });
+          toast("Whiteboard loaded successfully");
         });
       } else {
         // Initialize with default sections for a new whiteboard
         createDefaultTaskSections(fabricCanvas);
         fabricCanvas.renderAll();
-        
-        toast({
-          title: "New whiteboard created",
-          description: "Started with default sections",
-        });
+        toast("New whiteboard created with default sections");
       }
     } catch (error) {
       console.error('Error loading whiteboard:', error);
-      toast({
-        title: "Error loading whiteboard",
-        description: "There was an error loading your whiteboard",
-        variant: "destructive",
-      });
+      toast("Error loading whiteboard");
       
       // Initialize with default sections even on error
       createDefaultTaskSections(fabricCanvas);
       fabricCanvas.renderAll();
     }
-  };
+  }, [projectId]);
 
   return {
     isSaving,
