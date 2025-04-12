@@ -33,22 +33,34 @@ interface UseProjectChecklistReturn {
   ) => Promise<void>;
 }
 
-// Helper function to safely convert Json data to ChecklistItem[]
+// Helper function to safely convert Json data to ChecklistItem
 const convertJsonToChecklistItems = (jsonData: Json | null): ChecklistItem[] => {
   if (!jsonData || !Array.isArray(jsonData)) {
     return [];
   }
   
-  // Map and validate each item, making sure to include comments
+  // Map and validate each item, making sure to properly convert comments
   return jsonData.map(item => {
     // Ensure the item has the required properties
     if (typeof item === 'object' && item !== null && 
         'id' in item && 'text' in item) {
+      
+      // Convert comments from Json to proper Comment objects
+      let comments: Comment[] = [];
+      if (Array.isArray(item.comments)) {
+        comments = item.comments.map((comment: any) => ({
+          id: String(comment.id || `generated-${Date.now()}`),
+          text: String(comment.text || ''),
+          author: String(comment.author || 'Unknown'),
+          createdAt: comment.createdAt ? new Date(comment.createdAt) : new Date(),
+        }));
+      }
+      
       return {
         id: String(item.id),
         text: String(item.text),
         completed: 'completed' in item ? Boolean(item.completed) : false,
-        comments: Array.isArray(item.comments) ? item.comments : []
+        comments: comments
       };
     }
     
