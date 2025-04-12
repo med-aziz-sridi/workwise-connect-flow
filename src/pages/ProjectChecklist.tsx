@@ -8,7 +8,8 @@ import { Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProjectInfo from '@/components/project-checklist/ProjectInfo';
-import ChecklistTabs, { ChecklistItem, Comment } from '@/components/project-checklist/ChecklistTabs';
+import ChecklistTabs from '@/components/project-checklist/ChecklistTabs';
+import { ChecklistItem, Comment } from '@/types/task';
 import { useProjectChecklist } from '@/hooks/useProjectChecklist';
 
 const ProjectChecklist: React.FC = () => {

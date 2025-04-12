@@ -1,22 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
-
-// Make sure this interface is compatible with ChecklistTabs.tsx
-export interface ChecklistItem {
-  id: string;
-  text: string;
-  completed: boolean;
-  comments: Comment[];
-}
-
-export interface Comment {
-  id: string;
-  text: string;
-  author: string;
-  createdAt: Date;
-}
+import { ChecklistItem, Comment } from '@/types/task';
 
 interface ProjectChecklistData {
   todoItems: ChecklistItem[];
