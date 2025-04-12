@@ -14,3 +14,10 @@ export interface Comment {
   author: string;
   createdAt: Date;
 }
+
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  comments: Comment[];
+  completed: boolean;
+}

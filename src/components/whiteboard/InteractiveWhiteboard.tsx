@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useWhiteboardCanvas } from '@/hooks/useWhiteboardCanvas';
-import { useWhiteboardTools } from '@/hooks/useWhiteboardTools';
+import { useWhiteboardTools } from '@/hooks/whiteboard/useWhiteboardTools';
 import WhiteboardToolbar from './WhiteboardToolbar';
 
 interface InteractiveWhiteboardProps {
