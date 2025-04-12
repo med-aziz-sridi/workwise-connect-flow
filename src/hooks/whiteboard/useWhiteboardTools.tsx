@@ -1,55 +1,117 @@
 
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { fabric } from 'fabric';
+import { useWhiteboardCanvas } from '@/hooks/useWhiteboardCanvas';
 import { useWhiteboardShapes } from './useWhiteboardShapes';
-import { useWhiteboardNavigation } from './useWhiteboardNavigation';
 import { useWhiteboardMode } from './useWhiteboardMode';
+import { useWhiteboardNavigation } from './useWhiteboardNavigation';
 import { useWhiteboardStorage } from './useWhiteboardStorage';
+import { toast } from 'sonner';
 
-export function useWhiteboardTools(
-  projectId?: string,
-  canvas: fabric.Canvas | null = null,
-  canvasHistory: string[] = [],
-  historyIndex: number = -1,
-  setHistoryIndex: (index: number) => void = () => {}
-) {
-  const [activeTool, setActiveTool] = useState<string>('select');
+export const useWhiteboardTools = (projectId: string) => {
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Handle tool selection
-  const handleToolSelect = (tool: string) => {
+  // Import all our specialized hooks
+  const { initializeCanvas, resizeCanvas } = useWhiteboardCanvas();
+  const { 
+    currentMode, 
+    setCurrentMode, 
+    activateTool, 
+    deactivateAllTools 
+  } = useWhiteboardMode(canvas);
+  const { addShape, selectShape, deleteSelection } = useWhiteboardShapes(canvas);
+  const { zoomIn, zoomOut, resetZoom } = useWhiteboardNavigation(canvas);
+  const { 
+    loadCanvasFromStorage, 
+    saveCanvasToStorage, 
+    canvasChanged, 
+    setCanvasChanged 
+  } = useWhiteboardStorage(canvas, projectId);
+
+  const setupCanvas = useCallback(async (canvasElement: HTMLCanvasElement) => {
+    try {
+      if (!canvasElement) return;
+      
+      // Initialize and set up the canvas
+      setIsLoading(true);
+      const newCanvas = initializeCanvas(canvasElement);
+      setCanvas(newCanvas);
+
+      // Load saved canvas data
+      await loadCanvasFromStorage(newCanvas);
+      setIsLoading(false);
+      
+      // Add event listener for window resize
+      const handleResize = () => resizeCanvas(newCanvas, canvasElement);
+      window.addEventListener('resize', handleResize);
+      
+      // Auto-save on changes
+      newCanvas.on('object:modified', () => setCanvasChanged(true));
+      newCanvas.on('object:added', () => setCanvasChanged(true));
+      newCanvas.on('object:removed', () => setCanvasChanged(true));
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        newCanvas.dispose();
+      };
+    } catch (error) {
+      console.error('Error setting up canvas:', error);
+      setIsLoading(false);
+      toast.error('Error setting up whiteboard. Please try refreshing the page.');
+    }
+  }, [initializeCanvas, loadCanvasFromStorage, resizeCanvas, setCanvasChanged]);
+
+  // Auto save changes
+  useEffect(() => {
+    let saveTimeout: ReturnType<typeof setTimeout>;
+    
+    if (canvas && canvasChanged) {
+      saveTimeout = setTimeout(async () => {
+        try {
+          await saveCanvasToStorage();
+          setCanvasChanged(false);
+        } catch (error) {
+          console.error('Error saving canvas:', error);
+          toast.error('Failed to save whiteboard changes');
+        }
+      }, 2000);
+    }
+    
+    return () => clearTimeout(saveTimeout);
+  }, [canvas, canvasChanged, saveCanvasToStorage, setCanvasChanged]);
+
+  const saveCanvas = useCallback(async () => {
     if (!canvas) return;
     
-    setActiveTool(tool);
-    
-    // Disable fabric.js object selection when in drawing mode
-    canvas.isDrawingMode = tool === 'pencil' || tool === 'eraser';
-    
-    // Configure brush for different drawing tools
-    if (tool === 'pencil') {
-      canvas.freeDrawingBrush.color = '#000000';
-      canvas.freeDrawingBrush.width = 2;
-    } else if (tool === 'eraser') {
-      canvas.freeDrawingBrush.color = '#f8f9fa'; // Same as background
-      canvas.freeDrawingBrush.width = 10;
+    try {
+      await saveCanvasToStorage();
+      setCanvasChanged(false);
+      toast.success('Whiteboard saved successfully');
+    } catch (error) {
+      console.error('Error manually saving canvas:', error);
+      toast.error('Failed to save whiteboard');
     }
-  };
-
-  // Import functionality from smaller hooks
-  const shapes = useWhiteboardShapes(canvas);
-  const navigation = useWhiteboardNavigation(canvas, canvasHistory, historyIndex, setHistoryIndex);
-  const modeControls = useWhiteboardMode(canvas);
-  const storage = useWhiteboardStorage(projectId, canvas);
+  }, [canvas, saveCanvasToStorage, setCanvasChanged]);
 
   return {
-    activeTool,
-    whiteboardMode: modeControls.whiteboardMode,
-    isSaving: storage.isSaving,
-    handleToolSelect,
-    ...shapes,
-    ...navigation,
-    ...modeControls,
-    ...storage
+    canvas,
+    isLoading,
+    setupCanvas,
+    currentMode,
+    setCurrentMode,
+    activateTool,
+    deactivateAllTools,
+    addShape,
+    selectShape,
+    deleteSelection,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    isDrawing,
+    setIsDrawing,
+    saveCanvas,
+    canvasChanged
   };
-}
-
-export default useWhiteboardTools;
+};

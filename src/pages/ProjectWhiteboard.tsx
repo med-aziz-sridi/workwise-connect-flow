@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ProjectInfo from '@/components/project-checklist/ProjectInfo';
 import InteractiveWhiteboard from '@/components/whiteboard/InteractiveWhiteboard';
+import { toast } from 'sonner';
 
 const ProjectWhiteboard: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
@@ -29,6 +30,7 @@ const ProjectWhiteboard: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching project data:', error);
+        toast.error('Failed to load project data');
       } finally {
         setIsLoading(false);
       }
