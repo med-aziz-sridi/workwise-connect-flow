@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -42,28 +43,46 @@ const Messages: React.FC = () => {
         const data = await getConversations(user.id);
         setConversations(data);
         
-        // Fetch project group chats - Revised query
+        // Fetch projects the user is part of
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('id, title, created_at')
-          .or(`freelancer_id.eq.${user.id},provider_id.eq.${user.id}`)
+          .eq('freelancer_id', user.id)
           .order('created_at', { ascending: false });
         
         if (projectsError) {
-          console.error('Error fetching projects:', projectsError);
+          console.error('Error fetching freelancer projects:', projectsError);
           return;
         }
         
+        // Also fetch projects where user is the provider
+        const { data: providerProjectsData, error: providerProjectsError } = await supabase
+          .from('jobs')
+          .select('id, title, created_at')
+          .eq('provider_id', user.id)
+          .order('created_at', { ascending: false });
+          
+        if (providerProjectsError) {
+          console.error('Error fetching provider projects:', providerProjectsError);
+        }
+        
+        // Combine the projects
+        const allProjects = [
+          ...(projectsData || []),
+          ...(providerProjectsData || [])
+        ];
+        
         // For each project, separately fetch its messages
-        if (projectsData && projectsData.length > 0) {
+        if (allProjects.length > 0) {
           const formattedProjects: ProjectChat[] = [];
           
-          for (const project of projectsData) {
+          for (const project of allProjects) {
             const { data: messagesData, error: messagesError } = await supabase
               .from('project_messages')
               .select('created_at')
               .eq('project_id', project.id)
-              .order('created_at', { ascending: false });
+              .order('created_at', { ascending: false })
+              .limit(1);
             
             if (messagesError) {
               console.error(`Error fetching messages for project ${project.id}:`, messagesError);
@@ -74,11 +93,22 @@ const Messages: React.FC = () => {
               ? new Date(messagesData[0].created_at).toISOString()
               : new Date(project.created_at).toISOString();
             
+            // Get participant count
+            const { count: participantCount, error: countError } = await supabase
+              .from('project_messages')
+              .select('sender_id', { count: 'exact', head: true })
+              .eq('project_id', project.id)
+              .limit(1);
+              
+            if (countError) {
+              console.error(`Error counting participants for project ${project.id}:`, countError);
+            }
+            
             formattedProjects.push({
               id: project.id,
               title: project.title,
               lastMessageAt,
-              participantCount: 2 // Default value, could be calculated properly with another query
+              participantCount: participantCount || 2 // Default to 2 if count fails
             });
           }
           
@@ -96,6 +126,7 @@ const Messages: React.FC = () => {
     fetchConversations();
   }, [user]);
 
+  // Helper function to get initials from a name
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name

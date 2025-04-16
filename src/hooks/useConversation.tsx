@@ -44,13 +44,30 @@ export const useConversation = ({
           .from('conversations')
           .select(`
             participant1_id, participant2_id,
-            profiles1:profiles!conversations_participant1_id_fkey(name, profile_picture),
-            profiles2:profiles!conversations_participant2_id_fkey(name, profile_picture)
+            profiles1:profiles!conversations_participant1_id_fkey(id, name, profile_picture),
+            profiles2:profiles!conversations_participant2_id_fkey(id, name, profile_picture)
           `)
           .eq('id', conversationId)
-          .single();
+          .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors if no data
         
-        if (convError) throw convError;
+        if (convError) {
+          console.error('Error fetching conversation:', convError);
+          toast({
+            title: "Error loading conversation",
+            description: "Could not find the conversation. It may have been deleted.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        if (!conversation) {
+          toast({
+            title: "Conversation not found",
+            description: "This conversation doesn't exist or you don't have access to it.",
+            variant: "destructive"
+          });
+          return;
+        }
         
         // Determine the other participant
         const isParticipant1 = conversation.participant1_id === userId;
