@@ -15,6 +15,8 @@ export interface User {
   availableUntil?: string;
   location?: string;
   languages?: string[];
+  rating?: number;
+  totalRatings?: number;
 }
 
 // Database profile from Supabase
@@ -32,6 +34,8 @@ export interface Profile {
   available_until?: string;
   location?: string;
   languages?: string[];
+  rating?: number;
+  total_ratings?: number;
 }
 
 export type JobStatus = 'open' | 'closed' | 'completed';

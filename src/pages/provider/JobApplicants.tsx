@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AuthRequiredPage from '@/components/auth/AuthRequiredPage';
-import { ArrowLeft, Clock, Calendar, CheckCircle, XCircle, User } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, CheckCircle, XCircle, User, MessageSquare, FileText } from 'lucide-react';
+import { getOrCreateConversation } from '@/services/messaging';
 
 const JobApplicants: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,8 +48,20 @@ const JobApplicants: React.FC = () => {
   
   const jobApplications = applications.filter(app => app.jobId === job.id);
   const pendingApplications = jobApplications.filter(app => app.status === 'pending');
+  const interviewApplications = jobApplications.filter(app => app.status === 'primary_accepted');
   const acceptedApplications = jobApplications.filter(app => app.status === 'accepted');
   const rejectedApplications = jobApplications.filter(app => app.status === 'rejected');
+
+  const handleStartChat = async (freelancerId: string) => {
+    try {
+      const conversationId = await getOrCreateConversation(user.id, freelancerId, job.id);
+      if (conversationId) {
+        navigate(`/messages/${conversationId}`);
+      }
+    } catch (error) {
+      console.error('Error starting chat:', error);
+    }
+  };
   
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -89,6 +102,11 @@ const JobApplicants: React.FC = () => {
                 <Clock className="h-4 w-4" />
                 Pending
                 <Badge className="ml-2 bg-yellow-100 text-yellow-800">{pendingApplications.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="interview" className="flex gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Interview
+                <Badge className="ml-2 bg-blue-100 text-blue-800">{interviewApplications.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="accepted" className="flex gap-2">
                 <CheckCircle className="h-4 w-4" />
@@ -145,6 +163,78 @@ const JobApplicants: React.FC = () => {
                             </Button>
                             <Button 
                               size="sm"
+                              onClick={() => updateApplicationStatus(application.id, 'primary_accepted')}
+                              className="bg-blue-600 text-white hover:bg-blue-700"
+                            >
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              Interview
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 border border-dashed rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No pending applications</h3>
+                  <p className="text-gray-600">
+                    When freelancers apply to this job, their applications will appear here.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="interview">
+              {interviewApplications.length > 0 ? (
+                <div className="space-y-6">
+                  {interviewApplications.map((application) => {
+                    const freelancer = application.freelancerId;
+                    return (
+                      <div key={application.id} className="border border-blue-200 rounded-lg overflow-hidden">
+                        <div className="border-b border-blue-200 px-4 py-3 bg-blue-50 flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                              <User className="h-5 w-5 text-blue-500" />
+                            </div>
+                            <div>
+                              <div className="font-medium">Freelancer #{freelancer.substring(0, 8)}</div>
+                              <div className="text-sm text-gray-500">
+                                Interviewing {formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <Link to={`/applicants/${application.freelancerId}`} className="text-blue-600 hover:underline text-sm">
+                            View Profile
+                          </Link>
+                        </div>
+                        
+                        <div className="px-4 py-3">
+                          <div className="mb-3">
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Cover Letter</h4>
+                            <p className="text-gray-800 whitespace-pre-line">{application.coverLetter}</p>
+                          </div>
+                          
+                          <div className="flex justify-end gap-2 mt-4">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleStartChat(application.freelancerId)}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              Chat
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/contract/new/${application.id}`)}
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              Create Contract
+                            </Button>
+                            <Button 
+                              size="sm"
                               onClick={() => updateApplicationStatus(application.id, 'accepted')}
                               className="bg-green-600 text-white hover:bg-green-700"
                             >
@@ -159,9 +249,9 @@ const JobApplicants: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8 border border-dashed rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No pending applications</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No interviews in progress</h3>
                   <p className="text-gray-600">
-                    When freelancers apply to this job, their applications will appear here.
+                    When you send freelancers to interview, they will appear here.
                   </p>
                 </div>
               )}
