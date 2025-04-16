@@ -54,7 +54,8 @@ const Conversation: React.FC = () => {
         if (error) throw error;
         
         if (data.has_contract && data.contract_details) {
-          setContract(data.contract_details as ContractDetails);
+          // Cast to unknown first before casting to ContractDetails
+          setContract(data.contract_details as unknown as ContractDetails);
         }
       } catch (error) {
         console.error('Error fetching contract:', error);

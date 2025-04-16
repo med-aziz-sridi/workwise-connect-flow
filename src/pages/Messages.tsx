@@ -9,13 +9,22 @@ import { getConversations } from '@/services/messaging';
 import { formatDistanceToNow } from 'date-fns';
 import { Loader2, MessageSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectChat {
   id: string;
   title: string;
   lastMessageAt: string;
   participantCount: number;
+}
+
+// Update the Conversation type to include has_contract
+declare module '@/types' {
+  interface Conversation {
+    has_contract?: boolean;
+  }
 }
 
 const Messages: React.FC = () => {
@@ -122,7 +131,7 @@ const Messages: React.FC = () => {
                         <div className="flex items-center gap-4 p-4">
                           <Avatar className="h-12 w-12">
                             <AvatarImage src={conversation.otherUser?.profilePicture} alt={conversation.otherUser?.name} />
-                            <AvatarFallback>{getInitials(conversation.otherUser?.name)}</AvatarFallback>
+                            <AvatarFallback>{conversation.otherUser?.name?.charAt(0) || '?'}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-gray-900 truncate">{conversation.otherUser?.name}</p>
@@ -131,7 +140,7 @@ const Messages: React.FC = () => {
                             </p>
                           </div>
                           {conversation.has_contract && (
-                            <Badge className="bg-green-100 text-green-800 ml-2">Contract</Badge>
+                            <Badge className="bg-green-100 text-green-800">Contract</Badge>
                           )}
                         </div>
                       </Link>

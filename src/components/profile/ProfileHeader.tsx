@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, Edit, Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
-import VerificationBadge from '@/components/ui/verification-badge';
-import AvailabilityBadge from '@/components/ui/availability-badge';
+import { VerificationBadge } from '@/components/ui/verification-badge';
+import { AvailabilityBadge } from '@/components/ui/availability-badge';
 
 const ProfileHeader: React.FC = () => {
-  const { profile, isUpdating } = useAuth();
+  const { profile } = useAuth();
   
   if (!profile) return null;
   

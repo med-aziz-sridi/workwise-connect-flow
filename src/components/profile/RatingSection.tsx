@@ -32,26 +32,17 @@ const RatingSection: React.FC<RatingSectionProps> = ({ user, onRatingSubmitted }
     
     setIsSubmitting(true);
     try {
-      // First, record the rating in a new ratings table
-      const { error: ratingError } = await supabase
-        .from('user_ratings')
-        .insert({
-          rated_user_id: user.id,
-          rater_id: currentUser?.id,
-          rating: selectedRating,
-        });
-      
-      if (ratingError) throw ratingError;
-      
-      // Then update the average rating on the profile
+      // Instead of trying to insert into a non-existent user_ratings table,
+      // we'll just update the profile directly as a temporary solution
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('rating, total_ratings')
+        .select('*')
         .eq('id', user.id)
         .single();
       
       if (profileError) throw profileError;
       
+      // Calculate new rating - if no existing rating, use the selected rating
       const currentRating = profileData.rating || 0;
       const currentTotalRatings = profileData.total_ratings || 0;
       
