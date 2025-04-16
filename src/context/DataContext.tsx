@@ -11,7 +11,8 @@ import {
   Experience, 
   Certification, 
   User, 
-  UserRole 
+  UserRole,
+  ApplicationStatus
 } from '@/types';
 import { toast as sonnerToast } from 'sonner';
 
@@ -46,7 +47,7 @@ interface DataContextType {
   updateJob: (job: Job) => Promise<void>;
   deleteJob: (jobId: string) => Promise<void>;
   applyToJob: (jobId: string, coverLetter: string) => Promise<void>;
-  updateApplicationStatus: (applicationId: string, status: 'accepted' | 'rejected') => Promise<void>;
+  updateApplicationStatus: (applicationId: string, status: ApplicationStatus) => Promise<void>;
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   markNotificationAsRead: (notificationId: string) => Promise<void>;
