@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Conversation } from '@/types';
 import { getConversations } from '@/services/messaging';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,13 +20,6 @@ interface ProjectChat {
   participantCount: number;
 }
 
-// Update the Conversation type to include has_contract
-declare module '@/types' {
-  interface Conversation {
-    has_contract?: boolean;
-  }
-}
-
 const Messages: React.FC = () => {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -34,7 +27,7 @@ const Messages: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchConversations = async () => {
+    const fetchChats = async () => {
       if (!user) return;
       
       try {
@@ -46,95 +39,50 @@ const Messages: React.FC = () => {
         // Fetch projects the user is part of
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
-          .select('id, title, created_at')
-          .eq('freelancer_id', user.id)
+          .select(`
+            id, 
+            title, 
+            created_at,
+            project_messages (
+              created_at,
+              sender_id
+            )
+          `)
+          .or(`freelancer_id.eq.${user.id},provider_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
         
         if (projectsError) {
-          console.error('Error fetching freelancer projects:', projectsError);
+          console.error('Error fetching projects:', projectsError);
           return;
         }
-        
-        // Also fetch projects where user is the provider
-        const { data: providerProjectsData, error: providerProjectsError } = await supabase
-          .from('jobs')
-          .select('id, title, created_at')
-          .eq('provider_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (providerProjectsError) {
-          console.error('Error fetching provider projects:', providerProjectsError);
-        }
-        
-        // Combine the projects
-        const allProjects = [
-          ...(projectsData || []),
-          ...(providerProjectsData || [])
-        ];
-        
-        // For each project, separately fetch its messages
-        if (allProjects.length > 0) {
-          const formattedProjects: ProjectChat[] = [];
-          
-          for (const project of allProjects) {
-            const { data: messagesData, error: messagesError } = await supabase
-              .from('project_messages')
-              .select('created_at')
-              .eq('project_id', project.id)
-              .order('created_at', { ascending: false })
-              .limit(1);
-            
-            if (messagesError) {
-              console.error(`Error fetching messages for project ${project.id}:`, messagesError);
-              continue;
-            }
-            
-            const lastMessageAt = messagesData && messagesData.length > 0
-              ? new Date(messagesData[0].created_at).toISOString()
-              : new Date(project.created_at).toISOString();
-            
-            // Get participant count
-            const { count: participantCount, error: countError } = await supabase
-              .from('project_messages')
-              .select('sender_id', { count: 'exact', head: true })
-              .eq('project_id', project.id)
-              .limit(1);
-              
-            if (countError) {
-              console.error(`Error counting participants for project ${project.id}:`, countError);
-            }
-            
-            formattedProjects.push({
+
+        if (projectsData) {
+          const formattedProjects = projectsData.map(project => {
+            const messages = project.project_messages || [];
+            const uniqueParticipants = new Set(messages.map(msg => msg.sender_id));
+            const lastMessageAt = messages.length > 0 
+              ? messages[messages.length - 1].created_at 
+              : project.created_at;
+
+            return {
               id: project.id,
               title: project.title,
               lastMessageAt,
-              participantCount: participantCount || 2 // Default to 2 if count fails
-            });
-          }
-          
+              participantCount: uniqueParticipants.size || 1
+            };
+          });
+
           setProjectChats(formattedProjects);
-        } else {
-          setProjectChats([]);
         }
       } catch (error) {
-        console.error('Error fetching messages:', error);
+        console.error('Error fetching chats:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchConversations();
+    fetchChats();
   }, [user]);
-
-  // Helper function to get initials from a name
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
 
   if (isLoading) {
     return (

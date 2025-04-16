@@ -48,7 +48,7 @@ export const useConversation = ({
             profiles2:profiles!conversations_participant2_id_fkey(id, name, profile_picture)
           `)
           .eq('id', conversationId)
-          .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors if no data
+          .maybeSingle();
         
         if (convError) {
           console.error('Error fetching conversation:', convError);
@@ -74,15 +74,37 @@ export const useConversation = ({
         const otherParticipantId = isParticipant1 ? conversation.participant2_id : conversation.participant1_id;
         const otherParticipantData = isParticipant1 ? conversation.profiles2 : conversation.profiles1;
         
-        setReceiverInfo({
-          id: otherParticipantId,
-          name: otherParticipantData?.name || null,
-          profilePicture: otherParticipantData?.profile_picture || null
-        });
+        if (otherParticipantData) {
+          setReceiverInfo({
+            id: otherParticipantId,
+            name: otherParticipantData.name || null,
+            profilePicture: otherParticipantData.profile_picture || null
+          });
+        }
         
         // Get messages
-        const messagesData = await getMessages(conversationId);
-        setMessages(messagesData);
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
+          
+        if (messagesError) {
+          console.error('Error fetching messages:', messagesError);
+          throw messagesError;
+        }
+        
+        if (messagesData) {
+          setMessages(messagesData.map(msg => ({
+            id: msg.id,
+            senderId: msg.sender_id,
+            receiverId: msg.receiver_id,
+            content: msg.content,
+            read: msg.read,
+            createdAt: msg.created_at,
+            conversationId: msg.conversation_id
+          })));
+        }
         
         // Mark messages as read
         await markMessagesAsRead(userId, conversationId);
@@ -121,7 +143,7 @@ export const useConversation = ({
           conversationId: newMsg.conversation_id
         }]);
         
-        // Mark messages as read
+        // Mark messages as read if we're the receiver
         if (newMsg.sender_id !== userId) {
           markMessagesAsRead(userId, conversationId);
         }
