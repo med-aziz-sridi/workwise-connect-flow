@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -59,7 +60,7 @@ const ProfileHeader: React.FC = () => {
               )}
               
               {isFreelancer && profile.available_until && (
-                <AvailabilityBadge availableUntil={profile.available_until} />
+                <AvailabilityBadge />
               )}
               
               {profile.location && (

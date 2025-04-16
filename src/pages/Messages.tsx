@@ -59,7 +59,7 @@ const Messages: React.FC = () => {
             id: project.id,
             title: project.title,
             lastMessageAt: project.project_messages.length > 0 
-              ? Math.max(...project.project_messages.map(m => new Date(m.created_at).getTime()))
+              ? new Date(Math.max(...project.project_messages.map(m => new Date(m.created_at).getTime()))).toISOString()
               : new Date().toISOString(),
             participantCount: 2 // This would need to be calculated properly
           }));

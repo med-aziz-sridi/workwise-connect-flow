@@ -319,8 +319,10 @@ export type Database = {
           id: string
           name: string
           profile_picture: string | null
+          rating: number | null
           role: string
           skills: string[] | null
+          total_ratings: number | null
           verified: boolean | null
         }
         Insert: {
@@ -332,8 +334,10 @@ export type Database = {
           id: string
           name: string
           profile_picture?: string | null
+          rating?: number | null
           role: string
           skills?: string[] | null
+          total_ratings?: number | null
           verified?: boolean | null
         }
         Update: {
@@ -345,8 +349,10 @@ export type Database = {
           id?: string
           name?: string
           profile_picture?: string | null
+          rating?: number | null
           role?: string
           skills?: string[] | null
+          total_ratings?: number | null
           verified?: boolean | null
         }
         Relationships: []
