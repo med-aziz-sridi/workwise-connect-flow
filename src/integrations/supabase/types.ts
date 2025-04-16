@@ -86,6 +86,8 @@ export type Database = {
       }
       conversations: {
         Row: {
+          contract_details: Json | null
+          has_contract: boolean | null
           id: string
           job_id: string | null
           last_message_at: string
@@ -93,6 +95,8 @@ export type Database = {
           participant2_id: string
         }
         Insert: {
+          contract_details?: Json | null
+          has_contract?: boolean | null
           id?: string
           job_id?: string | null
           last_message_at?: string
@@ -100,6 +104,8 @@ export type Database = {
           participant2_id: string
         }
         Update: {
+          contract_details?: Json | null
+          has_contract?: boolean | null
           id?: string
           job_id?: string | null
           last_message_at?: string

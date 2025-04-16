@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,6 +35,7 @@ import WorkingFreelancers from "./pages/provider/WorkingFreelancers";
 import ProjectChecklist from "./pages/ProjectChecklist";
 import ProjectWhiteboard from "./pages/ProjectWhiteboard";
 import ProjectChat from "./pages/ProjectChat";
+import NewContract from "./pages/contract/NewContract";
 
 const queryClient = new QueryClient();
 
@@ -50,7 +50,6 @@ function App() {
             <BrowserRouter>
               <Layout>
                 <Routes>
-                  {/* Public routes */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
@@ -60,7 +59,6 @@ function App() {
                   <Route path="/jobs" element={<Jobs />} />
                   <Route path="/jobs/:id" element={<JobDetail />} />
                   
-                  {/* Redirect based on role */}
                   <Route path="/" element={<Home />} />
                   <Route 
                     path="/dashboard" 
@@ -75,7 +73,6 @@ function App() {
                     } 
                   />
                   
-                  {/* Freelancer routes */}
                   <Route 
                     path="/freelancer/dashboard" 
                     element={
@@ -101,7 +98,6 @@ function App() {
                     } 
                   />
                   
-                  {/* Provider routes */}
                   <Route 
                     path="/provider/dashboard" 
                     element={
@@ -151,7 +147,6 @@ function App() {
                     } 
                   />
                   
-                  {/* Common authenticated routes */}
                   <Route 
                     path="/profile" 
                     element={
@@ -193,7 +188,15 @@ function App() {
                     } 
                   />
                   
-                  {/* Project Routes */}
+                  <Route 
+                    path="/contract/new/:applicationId" 
+                    element={
+                      <RoleRoute role="provider">
+                        <NewContract />
+                      </RoleRoute>
+                    } 
+                  />
+                  
                   <Route path="/project/:id/checklist" element={<ProjectChecklist />} />
                   <Route path="/project/:id/whiteboard" element={<ProjectWhiteboard />} />
                   <Route path="/project/:id/chat" element={<ProjectChat />} />

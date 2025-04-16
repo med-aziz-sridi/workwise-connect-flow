@@ -35,7 +35,7 @@ export interface Profile {
 }
 
 export type JobStatus = 'open' | 'closed' | 'completed';
-export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
+export type ApplicationStatus = 'pending' | 'primary_accepted' | 'accepted' | 'rejected';
 export type NotificationType = 'application' | 'message' | 'system' | 'job';
 
 export interface Job {
