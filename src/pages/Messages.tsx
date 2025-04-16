@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -43,28 +42,49 @@ const Messages: React.FC = () => {
         const data = await getConversations(user.id);
         setConversations(data);
         
-        // Fetch project group chats
-        const { data: projects } = await supabase
+        // Fetch project group chats - Revised query
+        const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
-          .select(`
-            id, 
-            title, 
-            project_messages!inner (created_at)
-          `)
+          .select('id, title, created_at')
           .or(`freelancer_id.eq.${user.id},provider_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
         
-        if (projects) {
-          const formattedProjects = projects.map(project => ({
-            id: project.id,
-            title: project.title,
-            lastMessageAt: project.project_messages.length > 0 
-              ? new Date(Math.max(...project.project_messages.map(m => new Date(m.created_at).getTime()))).toISOString()
-              : new Date().toISOString(),
-            participantCount: 2 // This would need to be calculated properly
-          }));
+        if (projectsError) {
+          console.error('Error fetching projects:', projectsError);
+          return;
+        }
+        
+        // For each project, separately fetch its messages
+        if (projectsData && projectsData.length > 0) {
+          const formattedProjects: ProjectChat[] = [];
+          
+          for (const project of projectsData) {
+            const { data: messagesData, error: messagesError } = await supabase
+              .from('project_messages')
+              .select('created_at')
+              .eq('project_id', project.id)
+              .order('created_at', { ascending: false });
+            
+            if (messagesError) {
+              console.error(`Error fetching messages for project ${project.id}:`, messagesError);
+              continue;
+            }
+            
+            const lastMessageAt = messagesData && messagesData.length > 0
+              ? new Date(messagesData[0].created_at).toISOString()
+              : new Date(project.created_at).toISOString();
+            
+            formattedProjects.push({
+              id: project.id,
+              title: project.title,
+              lastMessageAt,
+              participantCount: 2 // Default value, could be calculated properly with another query
+            });
+          }
           
           setProjectChats(formattedProjects);
+        } else {
+          setProjectChats([]);
         }
       } catch (error) {
         console.error('Error fetching messages:', error);
