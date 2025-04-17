@@ -2,7 +2,8 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface SectionProps extends React.HTMLAttributes<HTMLDivElement> {
+// Create a new interface that doesn't have conflicting types
+interface SectionProps {
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
   titleClassName?: string;
@@ -11,9 +12,10 @@ interface SectionProps extends React.HTMLAttributes<HTMLDivElement> {
   action?: React.ReactNode;
   divided?: boolean;
   gradient?: boolean;
+  className?: string;
 }
 
-export const Section = React.forwardRef<HTMLDivElement, SectionProps>(
+export const Section = React.forwardRef<HTMLDivElement, SectionProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'title'>>(
   ({ 
     className, 
     children, 

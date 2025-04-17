@@ -3,7 +3,8 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface ModernCardProps extends React.HTMLAttributes<HTMLDivElement> {
+// Create a new interface that doesn't extend HTMLAttributes
+interface ModernCardProps {
   title?: React.ReactNode;
   description?: React.ReactNode;
   icon?: React.ReactNode;
@@ -12,9 +13,10 @@ interface ModernCardProps extends React.HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
   variant?: 'default' | 'outline' | 'glass';
   children?: React.ReactNode;
+  className?: string;
 }
 
-export const ModernCard = React.forwardRef<HTMLDivElement, ModernCardProps>(
+export const ModernCard = React.forwardRef<HTMLDivElement, ModernCardProps & React.HTMLAttributes<HTMLDivElement>>(
   ({ title, description, icon, footer, gradient, hover, variant = 'default', className, children, ...props }, ref) => {
     return (
       <Card 

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Badge, BadgeProps } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 
 type ModernBadgeVariant = 
   | 'default'
@@ -10,11 +10,14 @@ type ModernBadgeVariant =
   | 'pill'
   | 'dot';
 
-interface ModernBadgeProps extends Omit<BadgeProps, 'variant'> {
+// Create a new interface that doesn't extend BadgeProps directly
+interface ModernBadgeProps {
   variant?: ModernBadgeVariant;
   color?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
   icon?: React.ReactNode;
   dotColor?: string;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 const colorStyles = {
