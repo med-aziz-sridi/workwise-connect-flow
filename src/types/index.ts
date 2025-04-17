@@ -129,6 +129,7 @@ export interface Conversation {
   lastMessageAt: string;
   jobId?: string;
   lastMessage?: string;
+  hasContract?: boolean;
   otherUser?: {
     id: string;
     name: string;

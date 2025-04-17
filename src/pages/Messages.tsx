@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ProjectChat {
   id: string;
@@ -22,6 +23,7 @@ interface ProjectChat {
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [projectChats, setProjectChats] = useState<ProjectChat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,47 +44,66 @@ const Messages: React.FC = () => {
           .select(`
             id, 
             title, 
-            created_at,
-            project_messages (
-              created_at,
-              sender_id
-            )
+            created_at
           `)
           .or(`freelancer_id.eq.${user.id},provider_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
         
         if (projectsError) {
           console.error('Error fetching projects:', projectsError);
+          toast({
+            title: "Error loading projects",
+            description: "There was a problem loading your projects.",
+            variant: "destructive"
+          });
           return;
         }
 
         if (projectsData) {
-          const formattedProjects = projectsData.map(project => {
-            const messages = project.project_messages || [];
+          // Fetch project messages in a separate query for each project
+          const formattedProjects: ProjectChat[] = [];
+          
+          for (const project of projectsData) {
+            const { data: messagesData, error: messagesError } = await supabase
+              .from('project_messages')
+              .select('created_at, sender_id')
+              .eq('project_id', project.id);
+              
+            if (messagesError) {
+              console.error(`Error fetching messages for project ${project.id}:`, messagesError);
+              continue;
+            }
+            
+            const messages = messagesData || [];
             const uniqueParticipants = new Set(messages.map(msg => msg.sender_id));
             const lastMessageAt = messages.length > 0 
               ? messages[messages.length - 1].created_at 
               : project.created_at;
 
-            return {
+            formattedProjects.push({
               id: project.id,
               title: project.title,
               lastMessageAt,
               participantCount: uniqueParticipants.size || 1
-            };
-          });
+            });
+          }
 
           setProjectChats(formattedProjects);
         }
       } catch (error) {
         console.error('Error fetching chats:', error);
+        toast({
+          title: "Error loading chats",
+          description: "There was a problem loading your conversations.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchChats();
-  }, [user]);
+  }, [user, toast]);
 
   if (isLoading) {
     return (
@@ -138,7 +159,7 @@ const Messages: React.FC = () => {
                               {formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true })}
                             </p>
                           </div>
-                          {conversation.has_contract && (
+                          {conversation.hasContract && (
                             <Badge className="bg-green-100 text-green-800">Contract</Badge>
                           )}
                         </div>

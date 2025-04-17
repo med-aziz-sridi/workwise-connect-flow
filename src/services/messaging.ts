@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation, Message } from '@/types';
 
@@ -27,6 +26,7 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
         participant2Id: conv.participant2_id,
         lastMessageAt: conv.last_message_at,
         jobId: conv.job_id,
+        hasContract: conv.has_contract,
         otherUser: otherParticipant ? {
           id: otherParticipantId,
           name: otherParticipant.name,
@@ -73,7 +73,6 @@ export async function getOrCreateConversation(userId: string, otherUserId: strin
   }
 }
 
-// Define the shape of the message data returned from the database
 interface MessageRow {
   id: string;
   sender_id: string;
@@ -86,7 +85,6 @@ interface MessageRow {
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
   try {
-    // Explicitly select all needed fields to avoid type inference issues
     const { data, error } = await supabase
       .from('messages')
       .select('id, sender_id, receiver_id, content, read, created_at, conversation_id')
@@ -95,7 +93,6 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     
     if (error) throw error;
     
-    // Add type assertion to ensure correct typing
     return (data || []).map((message: any) => ({
       id: message.id,
       senderId: message.sender_id,

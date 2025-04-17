@@ -29,7 +29,7 @@ const Conversation: React.FC = () => {
     id: msg.id,
     sender_id: msg.senderId,
     sender_name: msg.senderId === user?.id ? 'You' : (receiverInfo?.name || 'User'),
-    sender_profile_picture: msg.senderId === user?.id ? user?.profile_picture : receiverInfo?.profilePicture,
+    sender_profile_picture: msg.senderId === user?.id ? user?.profilePicture : receiverInfo?.profilePicture,
     content: msg.content,
     created_at: msg.createdAt
   }));

@@ -57,6 +57,7 @@ export const useConversation = ({
             description: "Could not find the conversation. It may have been deleted.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
         
@@ -66,6 +67,7 @@ export const useConversation = ({
             description: "This conversation doesn't exist or you don't have access to it.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
         
@@ -91,7 +93,13 @@ export const useConversation = ({
           
         if (messagesError) {
           console.error('Error fetching messages:', messagesError);
-          throw messagesError;
+          toast({
+            title: "Error loading messages",
+            description: "There was a problem loading messages. Please try again later.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
         }
         
         if (messagesData) {
