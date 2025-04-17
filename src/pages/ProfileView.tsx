@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProfileById } from '@/services/userSearch';
@@ -124,9 +123,9 @@ const ProfileView: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
               <div className="relative -mt-16 sm:-mt-20">
                 <Avatar className="h-24 w-24 sm:h-32 sm:w-32 rounded-full ring-4 ring-white bg-white">
-                  <AvatarImage src={profile.profilePicture} alt={profile.name} />
+                  <AvatarImage src={profile?.profilePicture} alt={profile?.name} />
                   <AvatarFallback className="text-2xl bg-blue-600 text-white">
-                    {getInitials(profile.name)}
+                    {getInitials(profile?.name)}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -136,24 +135,18 @@ const ProfileView: React.FC = () => {
                   <div>
                     <div className="flex items-center">
                       <h1 className="text-2xl font-bold text-gray-900 truncate">
-                        {profile.name}
+                        {profile?.name}
                       </h1>
-                      {profile.verified && <VerificationBadge className="ml-2" />}
+                      {profile?.verified && <VerificationBadge className="ml-2" />}
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 capitalize">
-                        {profile.role}
+                        {profile?.role}
                       </Badge>
-                      
-                      {profile.location && (
-                        <Badge variant="outline">
-                          {profile.location}
-                        </Badge>
-                      )}
                     </div>
                     
-                    {profile.rating !== undefined && (
+                    {profile?.rating !== undefined && (
                       <div className="flex items-center mt-2">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -174,7 +167,7 @@ const ProfileView: React.FC = () => {
                     )}
                   </div>
                   
-                  {user && user.id !== profile.id && (
+                  {user && user.id !== profile?.id && (
                     <div className="mt-4 sm:mt-0">
                       <Button onClick={handleStartChat}>
                         <MessageSquare className="h-4 w-4 mr-2" />
@@ -187,7 +180,7 @@ const ProfileView: React.FC = () => {
             </div>
             
             {/* Skills */}
-            {profile.skills && profile.skills.length > 0 && (
+            {profile?.skills && profile.skills.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-gray-700">Skills</h3>
                 <div className="flex flex-wrap gap-2 mt-1">

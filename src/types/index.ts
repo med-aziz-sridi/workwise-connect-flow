@@ -174,6 +174,5 @@ export type UserSearchResult = {
   profilePicture?: string;
   skills?: string[];
   rating?: number;
-  location?: string;
   verified?: boolean;
 };
