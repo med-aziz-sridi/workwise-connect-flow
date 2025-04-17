@@ -10,7 +10,7 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, name, role, profile_picture, skills, rating, verified, languages')
+      .select('id, name, role, profile_picture, skills, rating, verified, location')
       .or(`name.ilike.%${query}%, skills.cs.{${query}}`)
       .limit(10);
 
@@ -24,7 +24,6 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
       skills: profile.skills,
       rating: profile.rating,
       location: profile.location,
-      languages: profile.languages,
       verified: profile.verified,
     }));
   } catch (error) {
@@ -37,7 +36,7 @@ export async function getProfileById(profileId: string): Promise<UserSearchResul
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, name, role, profile_picture, skills, rating, verified, languages')
+      .select('id, name, role, profile_picture, skills, rating, verified, location')
       .eq('id', profileId)
       .maybeSingle();
 
@@ -52,7 +51,6 @@ export async function getProfileById(profileId: string): Promise<UserSearchResul
       skills: data.skills,
       rating: data.rating,
       location: data.location,
-      languages: data.languages,
       verified: data.verified,
     };
   } catch (error) {
