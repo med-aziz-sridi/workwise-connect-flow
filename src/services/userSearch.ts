@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UserSearchResult } from '@/types';
+import { UserRole, UserSearchResult } from '@/types';
 
 export async function searchUsers(query: string): Promise<UserSearchResult[]> {
   if (!query || query.trim().length < 2) {
@@ -19,7 +19,7 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
     return (data || []).map((profile) => ({
       id: profile.id,
       name: profile.name,
-      role: profile.role,
+      role: profile.role as UserRole, // Cast role to UserRole type
       profilePicture: profile.profile_picture,
       skills: profile.skills,
       rating: profile.rating,
@@ -46,7 +46,7 @@ export async function getProfileById(profileId: string): Promise<UserSearchResul
     return {
       id: data.id,
       name: data.name,
-      role: data.role,
+      role: data.role as UserRole, // Cast role to UserRole type
       profilePicture: data.profile_picture,
       skills: data.skills,
       rating: data.rating,
