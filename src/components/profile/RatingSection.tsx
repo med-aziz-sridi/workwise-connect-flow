@@ -84,14 +84,14 @@ const RatingSection: React.FC<RatingSectionProps> = ({ user, onRatingSubmitted }
       if (updateError) throw updateError;
       
       // Add this rating to our recent ratings list
-      const newRating = {
+      const newRatingEntry: Rating = {
         id: Date.now().toString(),
         rater: currentUser?.name || "Anonymous",
         rating: selectedRating,
         date: new Date().toISOString()
       };
       
-      setRecentRatings(prev => [newRating, ...prev]);
+      setRecentRatings(prev => [newRatingEntry, ...prev]);
       
       toast({
         title: "Rating submitted",
