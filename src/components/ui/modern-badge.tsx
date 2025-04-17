@@ -51,10 +51,10 @@ export const ModernBadge = React.forwardRef<HTMLDivElement, ModernBadgeProps>(
     };
     
     return (
-      <Badge
+      <div
         ref={ref}
         className={cn(
-          'flex items-center gap-1 font-medium',
+          'inline-flex items-center gap-1 font-medium',
           variantClassNames[variant],
           className
         )}
@@ -70,7 +70,7 @@ export const ModernBadge = React.forwardRef<HTMLDivElement, ModernBadgeProps>(
         )}
         {icon && <span className="mr-1">{icon}</span>}
         {children}
-      </Badge>
+      </div>
     );
   }
 );
