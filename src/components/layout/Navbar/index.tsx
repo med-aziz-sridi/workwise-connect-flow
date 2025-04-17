@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -47,6 +48,10 @@ const Navbar: React.FC = () => {
 
           {/* Mobile menu button */}
           <div className="flex md:hidden">
+            {/* Mobile search - show on smaller screens */}
+            <div className="mr-2">
+              <UserSearch />
+            </div>
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">

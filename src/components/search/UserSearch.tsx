@@ -101,7 +101,7 @@ const UserSearch: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full max-w-md" ref={searchRef}>
+    <div className="relative w-full md:max-w-md" ref={searchRef}>
       <div className="relative">
         <Input
           type="text"
@@ -109,7 +109,7 @@ const UserSearch: React.FC = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setIsDropdownOpen(true)}
-          className="pl-10 pr-10"
+          className="pl-10 pr-10 w-full"
         />
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         {query && (

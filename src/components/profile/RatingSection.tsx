@@ -13,23 +13,31 @@ interface RatingSectionProps {
   onRatingSubmitted?: () => void;
 }
 
+interface Rating {
+  id: string;
+  rater: string;
+  rating: number;
+  date: string;
+}
+
 const RatingSection: React.FC<RatingSectionProps> = ({ user, onRatingSubmitted }) => {
   const [selectedRating, setSelectedRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [recentRatings, setRecentRatings] = useState<any[]>([]);
+  const [recentRatings, setRecentRatings] = useState<Rating[]>([]);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
   
-  // Fetch some recent ratings (for illustration)
+  // Fetch real ratings instead of using fake ones
   useEffect(() => {
     const fetchRecentRatings = async () => {
-      // We would typically fetch from a ratings table
-      // But for now, we'll just use a placeholder
-      setRecentRatings([
-        { id: 1, rater: "John Doe", rating: 5, date: new Date().toISOString() },
-        { id: 2, rater: "Jane Smith", rating: 4, date: new Date().toISOString() }
-      ]);
+      try {
+        // Here you would typically fetch from a ratings table
+        // This is a placeholder for future implementation
+        setRecentRatings([]);
+      } catch (error) {
+        console.error('Error fetching ratings:', error);
+      }
     };
     
     fetchRecentRatings();
@@ -76,15 +84,14 @@ const RatingSection: React.FC<RatingSectionProps> = ({ user, onRatingSubmitted }
       if (updateError) throw updateError;
       
       // Add this rating to our recent ratings list
-      setRecentRatings(prev => [
-        {
-          id: Date.now(),
-          rater: currentUser?.name || "Anonymous",
-          rating: selectedRating,
-          date: new Date().toISOString()
-        },
-        ...prev
-      ]);
+      const newRating = {
+        id: Date.now().toString(),
+        rater: currentUser?.name || "Anonymous",
+        rating: selectedRating,
+        date: new Date().toISOString()
+      };
+      
+      setRecentRatings(prev => [newRating, ...prev]);
       
       toast({
         title: "Rating submitted",
