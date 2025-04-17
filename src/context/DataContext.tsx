@@ -1,6 +1,5 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { 
@@ -11,19 +10,13 @@ import {
   Experience, 
   Certification, 
   User, 
-  UserRole,
   ApplicationStatus
 } from '@/types';
 import { toast as sonnerToast } from 'sonner';
 
-// Import service hooks
-import { useJobsService } from '@/services/jobs';
-import { useApplicationsService } from '@/services/applications';
-import { useProjectsService } from '@/services/projects';
-import { useNotificationsService } from '@/services/notifications';
-import { useExperiencesService } from '@/services/experiences';
-import { useCertificationsService } from '@/services/certifications';
-import { useUsersService } from '@/services/users';
+// Import API services
+import * as jobsApi from '@/api/jobs';
+// We'll add more imports as we implement the other API services
 
 // Define context type
 interface DataContextType {
@@ -75,181 +68,224 @@ export function useData() {
 }
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  // Initialize all services
-  const jobsService = useJobsService(user, profile);
-  const applicationsService = useApplicationsService(user, profile);
-  const projectsService = useProjectsService(user, profile);
-  const notificationsService = useNotificationsService(user, profile);
-  const experiencesService = useExperiencesService(user, profile);
-  const certificationsService = useCertificationsService(user, profile);
-  const usersService = useUsersService(user);
+  // State
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  
+  // Loading states
+  const [isLoading, setIsLoading] = useState({
+    jobs: false,
+    applications: false,
+    projects: false,
+    notifications: false,
+    experiences: false,
+    certifications: false,
+    users: false,
+  });
 
-  // Setup realtime subscriptions
-  useEffect(() => {
-    if (!user) return;
+  // Jobs methods
+  const fetchJobs = async () => {
+    setIsLoading(prev => ({ ...prev, jobs: true }));
+    try {
+      const data = await jobsApi.getAllJobs();
+      setJobs(data);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      toast({
+        title: "Failed to fetch jobs",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, jobs: false }));
+    }
+  };
 
-    const jobsChannel = supabase
-      .channel('jobs-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'jobs',
-      }, () => {
-        jobsService.fetchJobs();
-      })
-      .subscribe();
+  const createJob = async (job: Omit<Job, 'id' | 'providerId' | 'providerName' | 'createdAt' | 'status'>) => {
+    try {
+      await jobsApi.createJob(job);
+      fetchJobs();
+      toast({
+        title: "Job posted successfully",
+        description: "Your job has been posted and is now visible to freelancers",
+        className: "bg-green-100 border-green-500",
+      });
+    } catch (error) {
+      console.error('Error creating job:', error);
+      toast({
+        title: "Failed to post job",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
+  };
 
-    const applicationsChannel = supabase
-      .channel('applications-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'applications',
-        filter: profile?.role === 'freelancer' 
-          ? `freelancer_id=eq.${user.id}` 
-          : `job_id=in.(select id from jobs where provider_id=eq.${user.id})`,
-      }, () => {
-        applicationsService.fetchApplications();
-      })
-      .subscribe();
+  const updateJob = async (job: Job) => {
+    try {
+      await jobsApi.updateJob(job.id, job);
+      fetchJobs();
+      toast({
+        title: "Job updated successfully",
+        description: "Your changes have been saved",
+        className: "bg-green-100 border-green-500",
+      });
+    } catch (error) {
+      console.error('Error updating job:', error);
+      toast({
+        title: "Failed to update job",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
+  };
 
-    const projectsChannel = supabase
-      .channel('projects-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'projects',
-        filter: profile?.role === 'freelancer' ? `freelancer_id=eq.${user.id}` : undefined,
-      }, () => {
-        projectsService.fetchProjects();
-      })
-      .subscribe();
+  const deleteJob = async (jobId: string) => {
+    try {
+      await jobsApi.deleteJob(jobId);
+      setJobs(jobs.filter(job => job.id !== jobId));
+      toast({
+        title: "Job deleted successfully",
+        description: "The job has been removed",
+        className: "bg-green-100 border-green-500",
+      });
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast({
+        title: "Failed to delete job",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    }
+  };
 
-    const notificationsChannel = supabase
-      .channel('notifications-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`,
-      }, (payload) => {
-        notificationsService.fetchNotifications();
-        
-        if (payload.eventType === 'INSERT') {
-          sonnerToast.info('New Notification', {
-            description: payload.new.message,
-          });
-        }
-      })
-      .subscribe();
+  // Placeholder for other methods (to be implemented as APIs are created)
+  const fetchApplications = async () => {
+    // Placeholder - will be implemented with API
+    console.log('fetchApplications - Not yet implemented with API');
+  };
 
-    const experiencesChannel = supabase
-      .channel('experiences-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'experiences',
-        filter: profile?.role === 'freelancer' ? `freelancer_id=eq.${user.id}` : undefined,
-      }, () => {
-        experiencesService.fetchExperiences();
-      })
-      .subscribe();
+  const fetchProjects = async () => {
+    // Placeholder - will be implemented with API
+    console.log('fetchProjects - Not yet implemented with API');
+  };
 
-    const certificationsChannel = supabase
-      .channel('certifications-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'certifications',
-        filter: profile?.role === 'freelancer' ? `freelancer_id=eq.${user.id}` : undefined,
-      }, () => {
-        certificationsService.fetchCertifications();
-      })
-      .subscribe();
+  const fetchNotifications = async () => {
+    // Placeholder - will be implemented with API
+    console.log('fetchNotifications - Not yet implemented with API');
+  };
 
-    const profilesChannel = supabase
-      .channel('profiles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'profiles',
-      }, () => {
-        usersService.fetchUsers();
-      })
-      .subscribe();
+  const fetchExperiences = async () => {
+    // Placeholder - will be implemented with API
+    console.log('fetchExperiences - Not yet implemented with API');
+  };
 
-    return () => {
-      supabase.removeChannel(jobsChannel);
-      supabase.removeChannel(applicationsChannel);
-      supabase.removeChannel(projectsChannel);
-      supabase.removeChannel(notificationsChannel);
-      supabase.removeChannel(experiencesChannel);
-      supabase.removeChannel(certificationsChannel);
-      supabase.removeChannel(profilesChannel);
-    };
-  }, [user, profile]);
+  const fetchCertifications = async () => {
+    // Placeholder - will be implemented with API
+    console.log('fetchCertifications - Not yet implemented with API');
+  };
 
-  // Initial data fetch
+  const fetchUsers = async () => {
+    // Placeholder - will be implemented with API
+    console.log('fetchUsers - Not yet implemented with API');
+  };
+
+  // Placeholder implementation for remaining methods
+  const applyToJob = async (jobId: string, coverLetter: string) => {
+    console.log('applyToJob - Not yet implemented with API');
+  };
+
+  const updateApplicationStatus = async (applicationId: string, status: ApplicationStatus) => {
+    console.log('updateApplicationStatus - Not yet implemented with API');
+  };
+
+  const addProject = async (project: Omit<Project, 'id' | 'createdAt' | 'freelancerId'>) => {
+    console.log('addProject - Not yet implemented with API');
+  };
+
+  const deleteProject = async (projectId: string) => {
+    console.log('deleteProject - Not yet implemented with API');
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    console.log('markNotificationAsRead - Not yet implemented with API');
+  };
+
+  const addExperience = async (experience: Omit<Experience, 'id' | 'freelancerId'>) => {
+    console.log('addExperience - Not yet implemented with API');
+  };
+
+  const deleteExperience = async (experienceId: string) => {
+    console.log('deleteExperience - Not yet implemented with API');
+  };
+
+  const addCertification = async (certification: Omit<Certification, 'id' | 'freelancerId'>) => {
+    console.log('addCertification - Not yet implemented with API');
+  };
+
+  const deleteCertification = async (certificationId: string) => {
+    console.log('deleteCertification - Not yet implemented with API');
+  };
+
+  // Initialize data when user logs in
   useEffect(() => {
     if (user) {
-      jobsService.fetchJobs();
-      applicationsService.fetchApplications();
-      projectsService.fetchProjects();
-      notificationsService.fetchNotifications();
-      experiencesService.fetchExperiences();
-      certificationsService.fetchCertifications();
-      usersService.fetchUsers();
+      fetchJobs();
+      fetchApplications();
+      fetchProjects();
+      fetchNotifications();
+      fetchExperiences();
+      fetchCertifications();
+      fetchUsers();
     } else {
-      jobsService.fetchJobs();
-      applicationsService.resetApplications();
-      projectsService.resetProjects();
-      notificationsService.resetNotifications();
-      experiencesService.resetExperiences();
-      certificationsService.resetCertifications();
-      usersService.resetUsers();
+      // Reset states when user logs out
+      fetchJobs(); // Still fetch public jobs
+      setApplications([]);
+      setProjects([]);
+      setNotifications([]);
+      setExperiences([]);
+      setCertifications([]);
+      setUsers([]);
     }
   }, [user]);
 
   return (
     <DataContext.Provider 
       value={{ 
-        jobs: jobsService.jobs, 
-        applications: applicationsService.applications, 
-        projects: projectsService.projects, 
-        notifications: notificationsService.notifications,
-        experiences: experiencesService.experiences,
-        certifications: certificationsService.certifications,
-        users: usersService.users,
-        isLoading: {
-          jobs: jobsService.isLoading,
-          applications: applicationsService.isLoading,
-          projects: projectsService.isLoading,
-          notifications: notificationsService.isLoading,
-          experiences: experiencesService.isLoading,
-          certifications: certificationsService.isLoading,
-          users: usersService.isLoading,
-        },
-        createJob: jobsService.createJob,
-        updateJob: jobsService.updateJob,
-        deleteJob: jobsService.deleteJob,
-        applyToJob: applicationsService.applyToJob,
-        updateApplicationStatus: applicationsService.updateApplicationStatus,
-        addProject: projectsService.addProject,
-        deleteProject: projectsService.deleteProject,
-        markNotificationAsRead: notificationsService.markNotificationAsRead,
-        refreshJobs: jobsService.fetchJobs,
-        refreshApplications: applicationsService.fetchApplications,
-        refreshProjects: projectsService.fetchProjects,
-        refreshNotifications: notificationsService.fetchNotifications,
-        refreshExperiences: experiencesService.fetchExperiences,
-        refreshCertifications: certificationsService.fetchCertifications,
-        refreshUsers: usersService.fetchUsers,
-        addExperience: experiencesService.addExperience,
-        deleteExperience: experiencesService.deleteExperience,
-        addCertification: certificationsService.addCertification,
-        deleteCertification: certificationsService.deleteCertification,
+        jobs, 
+        applications, 
+        projects, 
+        notifications,
+        experiences,
+        certifications,
+        users,
+        isLoading,
+        createJob,
+        updateJob,
+        deleteJob,
+        applyToJob,
+        updateApplicationStatus,
+        addProject,
+        deleteProject,
+        markNotificationAsRead,
+        refreshJobs: fetchJobs,
+        refreshApplications: fetchApplications,
+        refreshProjects: fetchProjects,
+        refreshNotifications: fetchNotifications,
+        refreshExperiences: fetchExperiences,
+        refreshCertifications: fetchCertifications,
+        refreshUsers: fetchUsers,
+        addExperience,
+        deleteExperience,
+        addCertification,
+        deleteCertification
       }}
     >
       {children}
