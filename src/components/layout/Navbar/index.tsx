@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -8,6 +7,7 @@ import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import Logo from './Logo';
 import DesktopNav from './DesktopNav';
 import MobileNav from './MobileNav';
+import UserSearch from '@/components/search/UserSearch';
 
 const Navbar: React.FC = () => {
   const { user } = useAuth();
@@ -25,6 +25,9 @@ const Navbar: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-4">
+            <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
+              <UserSearch />
+            </div>
             {user ? (
               <DesktopNav />
             ) : (

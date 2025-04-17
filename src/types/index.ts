@@ -166,3 +166,14 @@ export interface VerificationRequest {
   createdAt: string;
   documents?: string[];
 }
+
+export type UserSearchResult = {
+  id: string;
+  name: string;
+  role: UserRole;
+  profilePicture?: string;
+  skills?: string[];
+  rating?: number;
+  location?: string;
+  verified?: boolean;
+};

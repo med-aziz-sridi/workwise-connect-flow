@@ -36,6 +36,7 @@ import ProjectChecklist from "./pages/ProjectChecklist";
 import ProjectWhiteboard from "./pages/ProjectWhiteboard";
 import ProjectChat from "./pages/ProjectChat";
 import NewContract from "./pages/contract/NewContract";
+import ProfileView from "./pages/ProfileView";
 
 const queryClient = new QueryClient();
 
@@ -154,6 +155,10 @@ function App() {
                         <Profile />
                       </PrivateRoute>
                     } 
+                  />
+                  <Route 
+                    path="/profile/:id" 
+                    element={<ProfileView />} 
                   />
                   <Route 
                     path="/settings" 
