@@ -1,15 +1,14 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useData } from '@/context/DataContext';
 import JobCard from '@/components/jobs/JobCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, ArrowLeft, Home } from 'lucide-react';
-import { Job } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Home } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import JobFilters from '@/components/jobs/JobFilters';
+import useJobFilters from '@/hooks/useJobFilters';
 
+// All available skills for filtering
 const ALL_SKILLS = [
   'React', 'Node.js', 'TypeScript', 'MongoDB', 'UI/UX', 'Figma', 'Adobe XD', 
   'Sketch', 'WordPress', 'PHP', 'CSS', 'JavaScript', 'Mobile Design', 'iOS', 'Android',
@@ -18,32 +17,16 @@ const ALL_SKILLS = [
 
 const Jobs: React.FC = () => {
   const { jobs } = useData();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const navigate = useNavigate();
   
-  const toggleSkill = (skill: string) => {
-    if (selectedSkills.includes(skill)) {
-      setSelectedSkills(selectedSkills.filter(s => s !== skill));
-    } else {
-      setSelectedSkills([...selectedSkills, skill]);
-    }
-  };
-  
-  const filteredJobs = jobs.filter(job => {
-    // Filter by search query
-    const matchesSearch = 
-      searchQuery === '' || 
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Filter by selected skills
-    const matchesSkills = 
-      selectedSkills.length === 0 || 
-      selectedSkills.some(skill => job.skills.includes(skill));
-    
-    return matchesSearch && matchesSkills;
-  });
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedSkills,
+    toggleSkill,
+    clearFilters,
+    filteredJobs
+  } = useJobFilters(jobs);
 
   const handleBackClick = () => {
     navigate(-1);
@@ -70,57 +53,14 @@ const Jobs: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Filters sidebar */}
         <div className="lg:col-span-1">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold text-lg mb-4">Filters</h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Search</h3>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search jobs..."
-                      className="pl-8"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Skills</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {ALL_SKILLS.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant={selectedSkills.includes(skill) ? "default" : "outline"}
-                        className={`cursor-pointer transition-colors ${
-                          selectedSkills.includes(skill) 
-                            ? "bg-blue-500 hover:bg-blue-600" 
-                            : "hover:bg-blue-50"
-                        }`}
-                        onClick={() => toggleSkill(skill)}
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                {selectedSkills.length > 0 && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-sm text-blue-600"
-                    onClick={() => setSelectedSkills([])}
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <JobFilters 
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedSkills={selectedSkills}
+            toggleSkill={toggleSkill}
+            clearFilters={clearFilters}
+            availableSkills={ALL_SKILLS}
+          />
         </div>
         
         {/* Job listings */}
@@ -139,10 +79,7 @@ const Jobs: React.FC = () => {
               </p>
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedSkills([]);
-                }}
+                onClick={clearFilters}
               >
                 Reset Filters
               </Button>

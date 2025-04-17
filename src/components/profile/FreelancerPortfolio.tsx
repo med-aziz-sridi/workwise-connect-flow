@@ -8,12 +8,17 @@ import { Plus } from 'lucide-react';
 import ProjectCard from '@/components/freelancers/ProjectCard';
 import { toast } from 'sonner';
 
-const FreelancerPortfolio: React.FC = () => {
+const FreelancerPortfolio: React.FC<{ userId?: string }> = ({ userId }) => {
   const {
     projects,
     isLoading,
     deleteProject
   } = useData();
+  
+  // Filter projects if userId is provided (viewing someone else's profile)
+  const displayProjects = userId 
+    ? projects.filter(p => p.freelancerId === userId)
+    : projects;
   
   const handleDelete = async (projectId: string) => {
     if (confirm('Are you sure you want to delete this project?')) {
@@ -31,25 +36,30 @@ const FreelancerPortfolio: React.FC = () => {
     );
   }
   
+  // Determine if user is viewing their own profile
+  const isOwnProfile = !userId;
+  
   return (
     <div className="p-6 border-t">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-semibold">Portfolio Projects</h2>
-        <Button asChild size="sm">
-          <Link to="/freelancer/add-project" className="flex items-center">
-            <Plus className="h-4 w-4 mr-1" /> Add Project
-          </Link>
-        </Button>
+        {isOwnProfile && (
+          <Button asChild size="sm">
+            <Link to="/freelancer/add-project" className="flex items-center">
+              <Plus className="h-4 w-4 mr-1" /> Add Project
+            </Link>
+          </Button>
+        )}
       </div>
       
-      {projects.length > 0 ? (
+      {displayProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {projects.map(project => (
+          {displayProjects.map(project => (
             <ProjectCard 
               key={project.id} 
               project={project} 
               onDelete={() => handleDelete(project.id)}
-              showActions
+              showActions={isOwnProfile}
             />
           ))}
         </div>
@@ -57,13 +67,17 @@ const FreelancerPortfolio: React.FC = () => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-gray-500 mb-4 text-center">
-              You haven't added any portfolio projects yet.
+              {isOwnProfile 
+                ? "You haven't added any portfolio projects yet."
+                : "This user hasn't added any portfolio projects yet."}
             </p>
-            <Button asChild>
-              <Link to="/freelancer/add-project" className="flex items-center">
-                <Plus className="h-4 w-4 mr-1" /> Add Your First Project
-              </Link>
-            </Button>
+            {isOwnProfile && (
+              <Button asChild>
+                <Link to="/freelancer/add-project" className="flex items-center">
+                  <Plus className="h-4 w-4 mr-1" /> Add Your First Project
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
