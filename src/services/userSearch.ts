@@ -10,7 +10,7 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, name, role, profile_picture, skills, rating, location, verified')
+      .select('id, name, role, profile_picture, skills, rating, verified')
       .or(`name.ilike.%${query}%, skills.cs.{${query}}`)
       .limit(10);
 
@@ -23,7 +23,7 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
       profilePicture: profile.profile_picture,
       skills: profile.skills,
       rating: profile.rating,
-      location: profile.location,
+      location: null, // Set to null since the column doesn't exist
       verified: profile.verified,
     }));
   } catch (error) {
@@ -36,7 +36,7 @@ export async function getProfileById(profileId: string): Promise<UserSearchResul
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, name, role, profile_picture, skills, rating, location, verified')
+      .select('id, name, role, profile_picture, skills, rating, verified')
       .eq('id', profileId)
       .maybeSingle();
 
@@ -50,7 +50,7 @@ export async function getProfileById(profileId: string): Promise<UserSearchResul
       profilePicture: data.profile_picture,
       skills: data.skills,
       rating: data.rating,
-      location: data.location,
+      location: null, // Set to null since the column doesn't exist
       verified: data.verified,
     };
   } catch (error) {
