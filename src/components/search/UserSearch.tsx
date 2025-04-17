@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -108,7 +109,7 @@ const UserSearch: React.FC = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setIsDropdownOpen(true)}
-          className="pl-10 pr-10 w-full"
+          className="pl-10 pr-10 w-full rounded-full bg-gray-50 border-gray-200 hover:border-primary/80 focus:border-primary/80 transition-colors"
         />
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         {query && (
@@ -118,29 +119,36 @@ const UserSearch: React.FC = () => {
               setResults([]);
               setIsDropdownOpen(false);
             }}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="h-4 w-4 text-gray-400" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
       {isDropdownOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg overflow-hidden border border-gray-200">
+        <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 animate-in fade-in slide-in">
           {isSearching ? (
-            <div className="p-4 text-center text-gray-500">Searching...</div>
+            <div className="p-4 text-center text-gray-500">
+              <div className="flex justify-center">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+              <p className="mt-2">Searching...</p>
+            </div>
           ) : results.length > 0 ? (
             <div className="max-h-96 overflow-y-auto">
               {results.map((result) => (
                 <div 
                   key={result.id} 
-                  className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                  className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-10 w-10 border border-gray-100 shadow-sm">
                         <AvatarImage src={result.profilePicture} alt={result.name} />
-                        <AvatarFallback>{getInitials(result.name)}</AvatarFallback>
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                          {getInitials(result.name)}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center">
@@ -167,14 +175,16 @@ const UserSearch: React.FC = () => {
                         size="sm" 
                         variant="outline" 
                         onClick={() => handleViewProfile(result.id)}
+                        className="text-xs rounded-full hover:bg-gray-100 transition-colors"
                       >
                         View
                       </Button>
                       <Button 
                         size="sm" 
                         onClick={() => handleStartChat(result.id)}
+                        className="text-xs rounded-full bg-primary hover:bg-primary/90 transition-colors"
                       >
-                        <MessageSquare className="h-4 w-4 mr-1" />
+                        <MessageSquare className="h-3 w-3 mr-1" />
                         Chat
                       </Button>
                     </div>
@@ -197,9 +207,15 @@ const UserSearch: React.FC = () => {
               ))}
             </div>
           ) : query.trim().length >= 2 ? (
-            <div className="p-4 text-center text-gray-500">No users found</div>
+            <div className="p-4 text-center text-gray-500">
+              <p>No users found</p>
+              <p className="text-sm mt-1">Try different keywords or skills</p>
+            </div>
           ) : (
-            <div className="p-4 text-center text-gray-500">Type at least 2 characters to search</div>
+            <div className="p-4 text-center text-gray-500">
+              <p>Type at least 2 characters to search</p>
+              <p className="text-sm mt-1">Search by name or skills</p>
+            </div>
           )}
         </div>
       )}
